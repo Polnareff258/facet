@@ -1,5 +1,5 @@
 # 离线演示配置：只启用 mock 源，用于验证「采集 → 存储 → 告警 → 看板」整条链路。
-# 用法： python -m csmon -c config.demo.yaml run
+# 用法： python -m facet -c config.demo.yaml run
 database: data/demo.db
 poll_interval: 5
 baseline_window_hours: 24

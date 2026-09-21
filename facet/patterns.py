@@ -293,8 +293,8 @@ EXAMPLE_RULES_YAML = """\
 # 会得到完全错误的档位判断。因此本文件默认是空的。
 #
 # 推荐路径：先跑实测学习，让市场自己告诉你哪些种子贵
-#     python -m csmon patterns learn "★ 蝴蝶刀 | 多普勒 (崭新出厂)"
-#     python -m csmon patterns show  "★ 蝴蝶刀 | 多普勒 (崭新出厂)"
+#     python -m facet patterns learn "★ 蝴蝶刀 | 多普勒 (崭新出厂)"
+#     python -m facet patterns show  "★ 蝴蝶刀 | 多普勒 (崭新出厂)"
 # 学习结果会写回本文件的 learned 段，并随市场变化自动更新。
 #
 # 如果你已经从可信来源（官方 API / 实盘核对）拿到确定的种子表，

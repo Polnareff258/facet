@@ -70,7 +70,7 @@ Body:   {"marketHashNameList": ["★ Bowie Knife", "AWP | Snake Camo (Factory Ne
 
 ### 本项目实现
 
-`csmon/sources/csqaq.py` —— `batch_size=50`、`min_interval=1.05s`（略高于 1 秒留抖动余量）。
+`facet/sources/csqaq.py` —— `batch_size=50`、`min_interval=1.05s`（略高于 1 秒留抖动余量）。
 
 ---
 
@@ -121,7 +121,7 @@ Body:   {"marketHashNames": ["..."]}          # 1..100
 
 ### 本项目实现
 
-`csmon/sources/steamdt.py` —— `batch_size=100`、`min_interval=60.5s`。
+`facet/sources/steamdt.py` —— `batch_size=100`、`min_interval=60.5s`。
 因为是 1 次/分钟级别的限额，**默认不启用**：让 1 分钟只能取 100 个饰品的源去做高频轮询不划算，
 它的正确定位是「低价兜底 + 求购价来源」。
 
@@ -176,14 +176,14 @@ adapter.resolve_by_name("AK-47 | Redline (Field-Tested)")
 2. 适配器内置 **6 小时 IP 级熔断**（`BuffDirectAdapter.IP_BLOCK_COOLDOWN`）；
 3. **强烈建议配 Cookie** —— 有了搜索就不需要扫描，触发风控的概率大幅下降。
 
-获取方式见 `.env.example` 或直接跑 `python -m csmon setup buff`（会引导抓取并当场验证）。
+获取方式见 `.env.example` 或直接跑 `python -m facet setup buff`（会引导抓取并当场验证）。
 
 ### 能力自检
 
 ```bash
-python -m csmon setup buff        # 交互式配置 + 验证
-python -m csmon doctor            # 看 BUFF 当前是匿名模式还是 Cookie 模式
-python -m csmon sources           # 看源的启用与凭证状态
+python -m facet setup buff        # 交互式配置 + 验证
+python -m facet doctor            # 看 BUFF 当前是匿名模式还是 Cookie 模式
+python -m facet sources           # 看源的启用与凭证状态
 ```
 
 代码里也可随时查询：`adapter.capabilities()` 返回当前真实可用的能力布尔表，
@@ -262,7 +262,7 @@ Body: {"userId":"1","pageType":"user_store"}     -> 店铺聚合信息，code:0
 
 ---
 
-## 7. 身份映射的获取途径（本项目 `csmon/mapping.py`）
+## 7. 身份映射的获取途径（本项目 `facet/mapping.py`）
 
 因为三个平台的 ID 互不相通，映射层是必须的。按可靠性排序：
 
@@ -270,11 +270,11 @@ Body: {"userId":"1","pageType":"user_store"}     -> 店铺聚合信息，code:0
 2. **社区沉淀的映射表** —— 参考项目 CS2TradeMonitor 随包附带 `hot-top1000.youpin-mapping.json.gz`，
    结构为 `{marketHashName: {steam_hash_name, yyyp_id}}`，可直接导入：
    ```bash
-   python -m csmon seed
+   python -m facet seed
    ```
-3. **BUFF ID 空间扫描** —— `csmon/indexer.py`，只产出 BUFF 侧，且**有风控风险**（见 §4）。
+3. **BUFF ID 空间扫描** —— `facet/indexer.py`，只产出 BUFF 侧，且**有风控风险**（见 §4）。
 
-已解析率可随时查：`python -m csmon index status` → `映射覆盖率`。
+已解析率可随时查：`python -m facet index status` → `映射覆盖率`。
 
 ---
 

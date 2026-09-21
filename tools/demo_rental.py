@@ -10,9 +10,9 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from csmon import rental as R              # noqa: E402
-from csmon.cli import _print_rent_report, _snapshot_from_row  # noqa: E402
-from csmon.store import Store              # noqa: E402
+from facet import rental as R              # noqa: E402
+from facet.cli import _print_rent_report, _snapshot_from_row  # noqa: E402
+from facet.store import Store              # noqa: E402
 
 # CSQAQ 文档 /api-187131780 返回示例（真实数据）
 SAMPLES = [

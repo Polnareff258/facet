@@ -4,11 +4,13 @@
 """
 from __future__ import annotations
 
+import os
+
 from pathlib import Path
 
 import pytest
 
-from csmon.config import (
+from facet.config import (
     LOCAL_CONFIG_NAME,
     Config,
     LLMSettings,
@@ -18,17 +20,17 @@ from csmon.config import (
     local_config_path,
     write_local_config,
 )
-from csmon.llm import LLMConfig, PRESETS
-from csmon.ratelimit import GateRegistry
-from csmon.setup_wizard import (
+from facet.llm import LLMConfig, PRESETS
+from facet.ratelimit import GateRegistry
+from facet.setup_wizard import (
     PRESET_KEY_ENV,
     env_file_path,
     mask,
     update_env,
 )
-from csmon.sources import ALIASES, REGISTRY, build_sources, describe_registry
-from csmon.sources.buff_direct import BuffDirectAdapter
-from csmon.config import SOURCE_BUFF, SOURCE_BUFF_DIRECT
+from facet.sources import ALIASES, REGISTRY, build_sources, describe_registry
+from facet.sources.buff_direct import BuffDirectAdapter
+from facet.config import SOURCE_BUFF, SOURCE_BUFF_DIRECT
 
 
 # ── 配置分层 ───────────────────────────────────────────────
@@ -135,6 +137,62 @@ def test_env_file_path_follows_config(tmp_path: Path) -> None:
     assert env_file_path(tmp_path / "config.yaml") == tmp_path / ".env"
 
 
+# ── 改名兼容（youyoumonitor/csmon → facet）──────────────────
+
+def test_legacy_env_prefix_migrated(monkeypatch) -> None:
+    """旧的 CSMON_* 环境变量必须被自动搬到 FACET_*。
+
+    改名不能顺带把别人已配置好的环境弄失效 —— Token 可能写在系统环境变量
+    或 CI secret 里，改个前缀就要求重配是不合理的。
+    """
+    from facet import _bootstrap_env
+    from facet.config import _migrate_legacy_env
+
+    monkeypatch.delenv("FACET_LLM_API_KEY", raising=False)
+    monkeypatch.setenv("CSMON_LLM_API_KEY", "sk-legacy")
+    monkeypatch.setenv("CSMON_POLL_INTERVAL", "600")
+
+    moved = _migrate_legacy_env()
+    assert moved >= 2
+    assert os.environ["FACET_LLM_API_KEY"] == "sk-legacy"
+    assert os.environ["FACET_POLL_INTERVAL"] == "600"
+    assert callable(_bootstrap_env)
+
+
+def test_new_env_prefix_wins_over_legacy(monkeypatch) -> None:
+    """新名字优先，不能被旧值覆盖。"""
+    from facet.config import _migrate_legacy_env
+
+    monkeypatch.setenv("FACET_LLM_API_KEY", "sk-new")
+    monkeypatch.setenv("CSMON_LLM_API_KEY", "sk-old")
+    _migrate_legacy_env()
+    assert os.environ["FACET_LLM_API_KEY"] == "sk-new"
+
+
+def test_legacy_llm_key_still_works(monkeypatch) -> None:
+    """端到端：只设旧变量名也能正常构造 LLM 客户端。"""
+    from facet import _bootstrap_env
+    from facet.llm import LLMConfig
+
+    monkeypatch.delenv("FACET_LLM_API_KEY", raising=False)
+    monkeypatch.delenv("DEEPSEEK_API_KEY", raising=False)
+    monkeypatch.setenv("CSMON_LLM_API_KEY", "sk-legacy")
+    _bootstrap_env()
+
+    cfg = LLMConfig.from_settings(LLMSettings(preset="deepseek"))
+    assert cfg.api_key == "sk-legacy"
+    assert cfg.is_configured() is True
+
+
+def test_package_name_is_facet() -> None:
+    """命名一致性：包名、版本号、CLI 程序名。"""
+    import facet
+    from facet.cli import build_parser
+
+    assert facet.__version__ >= "0.2.0"
+    assert build_parser().prog == "facet"
+
+
 def test_mask_never_reveals_short_secrets() -> None:
     assert "secret" not in mask("secret")
     assert mask("") == "(空)"
@@ -154,8 +212,8 @@ def test_all_presets_have_base_url_and_model() -> None:
 
 def test_every_preset_used_in_wizard_has_key_env() -> None:
     """向导菜单里出现的预设，必须能查到该写哪个密钥变量。"""
-    from csmon.llm import LOCAL_PRESETS
-    from csmon.setup_wizard import PRESET_MENU
+    from facet.llm import LOCAL_PRESETS
+    from facet.setup_wizard import PRESET_MENU
 
     for name, _label in PRESET_MENU:
         assert name in PRESETS, f"菜单里的 {name} 不是有效预设"
@@ -174,7 +232,7 @@ def test_llm_settings_from_config_takes_preset(tmp_path: Path) -> None:
 
 def test_env_overrides_config_preset(tmp_path: Path, monkeypatch) -> None:
     """环境变量优先于配置文件，便于临时切换。"""
-    monkeypatch.setenv("CSMON_LLM_PRESET", "moonshot")
+    monkeypatch.setenv("FACET_LLM_PRESET", "moonshot")
     cfg = LLMConfig.from_settings(LLMSettings(preset="deepseek"))
     assert cfg.preset == "moonshot"
     assert "moonshot" in cfg.resolved_base_url()
@@ -182,7 +240,7 @@ def test_env_overrides_config_preset(tmp_path: Path, monkeypatch) -> None:
 
 def test_all_local_presets_need_no_key() -> None:
     """标为本机预设的，必须真的不需要密钥就能用。"""
-    from csmon.llm import LOCAL_PRESETS
+    from facet.llm import LOCAL_PRESETS
 
     for name in LOCAL_PRESETS:
         cfg = LLMConfig.from_settings(LLMSettings(preset=name))
@@ -190,7 +248,7 @@ def test_all_local_presets_need_no_key() -> None:
 
 
 def test_cloud_preset_without_key_not_configured() -> None:
-    for key in ("CSMON_LLM_API_KEY", "DEEPSEEK_API_KEY", "OPENAI_API_KEY"):
+    for key in ("FACET_LLM_API_KEY", "DEEPSEEK_API_KEY", "OPENAI_API_KEY"):
         import os
         os.environ.pop(key, None)
     cfg = LLMConfig.from_settings(LLMSettings(preset="deepseek"))
@@ -260,7 +318,7 @@ def test_buff_fetch_bid_toggle() -> None:
 
 
 def test_buff_search_requires_cookie() -> None:
-    from csmon.ratelimit import RateLimitExceeded
+    from facet.ratelimit import RateLimitExceeded
 
     adapter = BuffDirectAdapter(SourceConfig(name=SOURCE_BUFF, min_interval=0.0),
                                 GateRegistry())
@@ -315,7 +373,7 @@ def test_build_sources_uses_config_name_for_alias(tmp_path: Path) -> None:
 # ── doctor 集成 ────────────────────────────────────────────
 
 def test_doctor_reports_buff_mode_and_llm(tmp_path: Path) -> None:
-    from csmon.doctor import run_checks
+    from facet.doctor import run_checks
 
     (tmp_path / "config.yaml").write_text(
         "sources:\n  buff:\n    enabled: true\n",
@@ -330,7 +388,7 @@ def test_doctor_reports_buff_mode_and_llm(tmp_path: Path) -> None:
 
 def test_doctor_buff_anonymous_is_warning_not_error(tmp_path: Path) -> None:
     """匿名模式是能力受限，不是错误 —— 不该阻断启动。"""
-    from csmon.doctor import LEVEL_OK, LEVEL_WARN, run_checks
+    from facet.doctor import LEVEL_OK, LEVEL_WARN, run_checks
 
     cfg = Config(database=str(tmp_path / "d.db"),
                  sources={SOURCE_BUFF: SourceConfig(name=SOURCE_BUFF, enabled=True)})

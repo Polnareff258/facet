@@ -8,14 +8,14 @@ from pathlib import Path
 
 import pytest
 
-# 让 tests/ 在未安装包的情况下也能 import csmon
+# 让 tests/ 在未安装包的情况下也能 import facet
 ROOT = Path(__file__).resolve().parent.parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from csmon.config import Config, NotifyConfig, SourceConfig, WebConfig  # noqa: E402
-from csmon.mapping import MappingService  # noqa: E402
-from csmon.store import Store  # noqa: E402
+from facet.config import Config, NotifyConfig, SourceConfig, WebConfig  # noqa: E402
+from facet.mapping import MappingService  # noqa: E402
+from facet.store import Store  # noqa: E402
 
 # 沙箱环境的系统临时目录不可写，因此把测试临时目录固定在工作区内
 WORKROOT = ROOT / ".testwork"

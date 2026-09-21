@@ -16,6 +16,28 @@ from .models import WatchRule
 
 DEFAULT_CONFIG_PATH = "config.yaml"
 
+#: 环境变量前缀。历史版本用过 CSMON_，_migrate_legacy_env() 会自动搬过来。
+ENV_PREFIX = "FACET_"
+LEGACY_ENV_PREFIX = "CSMON_"
+
+
+def _migrate_legacy_env() -> int:
+    """把旧的 CSMON_* 环境变量搬到 FACET_*。
+
+    改名不能顺带把别人已配置好的环境弄失效 —— 用户可能已经把 Token 写进
+    系统环境变量或 CI secret，改个前缀就要求重配是不合理的。
+    只在 FACET_* 未设置时搬运，新名字优先。
+    """
+    moved = 0
+    for key, value in list(os.environ.items()):
+        if not key.startswith(LEGACY_ENV_PREFIX):
+            continue
+        new_key = ENV_PREFIX + key[len(LEGACY_ENV_PREFIX):]
+        if new_key not in os.environ:
+            os.environ[new_key] = value
+            moved += 1
+    return moved
+
 # 支持的源名称
 SOURCE_CSQAQ = "csqaq"
 SOURCE_STEAMDT = "steamdt"
@@ -67,7 +89,7 @@ class NotifyConfig:
 class LLMSettings:
     """LLM 接入设置（**非密钥部分**，放 config.local.yaml）。
 
-    密钥本身走 .env 的 CSMON_LLM_API_KEY，不进这里 —— 这样个人配置文件
+    密钥本身走 .env 的 FACET_LLM_API_KEY，不进这里 —— 这样个人配置文件
     即使被误传到别处，也不会泄露凭据。
     """
 
@@ -93,7 +115,7 @@ class WebConfig:
 
 @dataclass
 class Config:
-    database: str = "data/csmon.db"
+    database: str = "data/facet.db"
     poll_interval: int = 1800          # 普通监控轮询间隔（秒）
     baseline_window_hours: int = 168   # 波动基准窗口（7 天）
     sources: dict[str, SourceConfig] = field(default_factory=dict)
@@ -230,7 +252,8 @@ def load_config(path: str | Path | None = None) -> Config:
     不必手动 export 环境变量。
     """
     load_dotenv(Path(path).parent / ".env" if path else ".env")
-    cfg_path = Path(path or os.environ.get("CSMON_CONFIG") or DEFAULT_CONFIG_PATH)
+    _migrate_legacy_env()
+    cfg_path = Path(path or os.environ.get(f"{ENV_PREFIX}CONFIG") or DEFAULT_CONFIG_PATH)
     raw: dict[str, Any] = {}
     if cfg_path.exists():
         with cfg_path.open("r", encoding="utf-8") as fh:
@@ -240,7 +263,7 @@ def load_config(path: str | Path | None = None) -> Config:
     # 都放 config.local.yaml，它不入库，所以每次 git pull 都不会冲突。
     local_path = local_config_path(cfg_path)
     local_raw: dict[str, Any] = {}
-    env_local = os.environ.get("CSMON_LOCAL_CONFIG")
+    env_local = os.environ.get("FACET_LOCAL_CONFIG")
     if env_local:
         local_path = Path(env_local)
     if local_path.exists():
@@ -295,7 +318,7 @@ def load_config(path: str | Path | None = None) -> Config:
     llm_raw = raw.get("llm") or {}
 
     cfg = Config(
-        database=raw.get("database") or os.environ.get("CSMON_DB") or "data/csmon.db",
+        database=raw.get("database") or os.environ.get("FACET_DB") or "data/facet.db",
         poll_interval=int(raw.get("poll_interval") or 1800),
         baseline_window_hours=int(raw.get("baseline_window_hours") or 168),
         sources=sources,
@@ -320,8 +343,8 @@ def load_config(path: str | Path | None = None) -> Config:
     )
 
     # 环境变量覆盖轮询间隔，便于临时加速调试
-    if os.environ.get("CSMON_POLL_INTERVAL"):
-        cfg.poll_interval = int(os.environ["CSMON_POLL_INTERVAL"])
+    if os.environ.get("FACET_POLL_INTERVAL"):
+        cfg.poll_interval = int(os.environ["FACET_POLL_INTERVAL"])
     return cfg
 
 
@@ -366,7 +389,7 @@ def write_local_config(updates: dict[str, Any], path: str | Path | None = None) 
     merged = _deep_merge(existing, updates)
 
     header = (
-        "# youyoumonitor 本地私有配置（不入库）\n"
+        "# facet 本地私有配置（不入库）\n"
         "#\n"
         "# 这个文件放你个人的东西：关注清单、LLM 预设选择、通知渠道、端口等。\n"
         "# 密钥不写这里 —— 密钥走 .env（同样不入库）。\n"
@@ -398,7 +421,7 @@ sources:
     min_interval: 5.0
     fetch_bid: true        # 同时取求购价（多一次请求）
 
-# 我真正要买/要卖的（用 CLI 添加更省事：csmon focus add）
+# 我真正要买/要卖的（用 CLI 添加更省事：facet focus add）
 # watchlist:
 #   - market_hash_name: "AK-47 | Redline (Field-Tested)"
 #     below: 95
@@ -423,7 +446,7 @@ web:
 """
 
 
-ENV_TEMPLATE = """# youyoumonitor 凭证（复制为 .env 并填入；不要提交到版本库）
+ENV_TEMPLATE = """# facet 凭证（复制为 .env 并填入；不要提交到版本库）
 
 # CSQAQ 数据开放 API：注册即送 Token，需在官网绑定本机白名单 IP
 # 一次调用即返回 BUFF + 悠悠有品 + Steam 的在售价与在售量
@@ -441,7 +464,7 @@ YOUPIN_DEVICE_UK=
 BUFF_COOKIE=
 
 # 可选：覆盖配置
-# CSMON_DB=data/csmon.db
-# CSMON_POLL_INTERVAL=1800
-# CSMON_CONFIG=config.yaml
+# FACET_DB=data/facet.db
+# FACET_POLL_INTERVAL=1800
+# FACET_CONFIG=config.yaml
 """

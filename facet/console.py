@@ -14,7 +14,7 @@ Windows 中文版的默认控制台代码页是 936(GBK)。这带来两类问题
    `print()` 会抛 UnicodeEncodeError 直接中断程序。
    → 对策：本模块把控制台切到 UTF-8；切不动就降级为 ASCII 符号集。
 
-本模块在 `bootstrap.py` 与 `csmon/cli.py` 的入口处各调用一次，
+本模块在 `bootstrap.py` 与 `facet/cli.py` 的入口处各调用一次，
 覆盖「双击启动」与「命令行直接跑」两条路径。
 """
 from __future__ import annotations

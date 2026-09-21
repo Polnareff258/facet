@@ -14,7 +14,7 @@ config.local.yaml
 youpin_device_profile.json
 
 # 图案档位规则表：learned 段是你从实盘学到的数据，属个人资产。
-# 脚手架由 `python -m csmon patterns init` 生成，无需入库。
+# 脚手架由 `python -m facet patterns init` 生成，无需入库。
 patterns.yaml
 patterns.local.yaml
 

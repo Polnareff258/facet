@@ -8,14 +8,14 @@ from typing import Any
 
 import pytest
 
-from csmon.config import SourceConfig
-from csmon.models import ItemRef
-from csmon.ratelimit import GateRegistry, RateLimitExceeded
-from csmon.sources.buff_direct import BuffDirectAdapter
-from csmon.sources.csqaq import CsqaqAdapter
-from csmon.sources.mock import MockAdapter
-from csmon.sources.steamdt import SteamDtAdapter
-from csmon.sources.youpin_direct import YouPinDirectAdapter
+from facet.config import SourceConfig
+from facet.models import ItemRef
+from facet.ratelimit import GateRegistry, RateLimitExceeded
+from facet.sources.buff_direct import BuffDirectAdapter
+from facet.sources.csqaq import CsqaqAdapter
+from facet.sources.mock import MockAdapter
+from facet.sources.steamdt import SteamDtAdapter
+from facet.sources.youpin_direct import YouPinDirectAdapter
 
 # ── 伪造 HTTP 会话 ─────────────────────────────────────────
 
@@ -103,7 +103,7 @@ def test_csqaq_parses_three_platforms() -> None:
 
 
 def test_csqaq_preflight_requires_token() -> None:
-    from csmon.sources.base import SourceUnavailable
+    from facet.sources.base import SourceUnavailable
     adapter = CsqaqAdapter(_cfg("csqaq", api_token=None), GateRegistry())
     with pytest.raises(SourceUnavailable):
         adapter.preflight()
@@ -160,7 +160,7 @@ def test_steamdt_parses_and_maps_platforms() -> None:
 
 
 def test_steamdt_preflight_requires_key() -> None:
-    from csmon.sources.base import SourceUnavailable
+    from facet.sources.base import SourceUnavailable
     with pytest.raises(SourceUnavailable):
         SteamDtAdapter(_cfg("steamdt", api_key=None), GateRegistry()).preflight()
 
@@ -428,7 +428,7 @@ def test_credential_free_sources_declare_no_requirement() -> None:
 
 
 def test_registry_describes_capabilities_and_credentials() -> None:
-    from csmon.sources import describe_registry
+    from facet.sources import describe_registry
 
     rows = {row["name"]: row for row in describe_registry()}
     assert rows["csqaq"]["credential_env"] == "CSQAQ_TOKEN"

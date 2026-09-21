@@ -5,9 +5,9 @@ from datetime import timedelta
 
 import pytest
 
-from csmon import analytics, indicators
-from csmon.models import SourceQuote, utcnow
-from csmon.store import Store
+from facet import analytics, indicators
+from facet.models import SourceQuote, utcnow
+from facet.store import Store
 
 
 # ── 均线 ───────────────────────────────────────────────────

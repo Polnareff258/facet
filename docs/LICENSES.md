@@ -38,13 +38,13 @@ GPL-3.0 是强 copyleft：若你**分发**了包含其代码的衍生作品，�
    这类事实性信息不构成受版权保护的表达，本项目据此**独立重写**了 Python 实现。
 2. **未随包分发其资源文件**。`refs/` 已加入 `.gitignore`，参考项目源码与资源
    只存在于你本地、由你自行克隆。
-3. `csmon seed` 命令会**可选地**读取其随包附带的
+3. `facet seed` 命令会**可选地**读取其随包附带的
    `hot-top1000.youpin-mapping.json.gz`（一个 `marketHashName → yyyp_id` 的事实映射表）。
    该操作是**运行时的本地读取**，且资源不存在时静默跳过 —— 本项目不把它打进分发物。
    若你要对外分发本工具，建议**自行重建该映射**（通过公开接口按关键词解析 templateId），
    而不是附带 GPL 项目的资源文件。
-4. 最保守的做法：不运行 `csmon seed`，改用 CLI 显式指定 ID
-   （`python -m csmon watch add "名称" --youpin-id 822`）。
+4. 最保守的做法：不运行 `facet seed`，改用 CLI 显式指定 ID
+   （`python -m facet watch add "名称" --youpin-id 822`）。
 
 ### MIT 项目（`cs2-inventory-manager`、`buff-price-alert`）
 

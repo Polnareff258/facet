@@ -1,12 +1,12 @@
-﻿# 把 youyoumonitor 注册为 Windows 计划任务（开机自启 + 崩溃重启）
+﻿# 把 facet 注册为 Windows 计划任务（开机自启 + 崩溃重启）
 #
 #   .\install-windows.ps1                 # 安装（以当前用户身份运行）
 #   .\install-windows.ps1 -Uninstall      # 卸载
 #   .\install-windows.ps1 -Interval 3600  # 自定义采集间隔（秒）
 #
 # 装好后：
-#   Get-ScheduledTask csmon | Get-ScheduledTaskInfo
-#   Stop-ScheduledTask csmon ; Start-ScheduledTask csmon
+#   Get-ScheduledTask facet | Get-ScheduledTaskInfo
+#   Stop-ScheduledTask facet ; Start-ScheduledTask facet
 #
 # 说明：用「计划任务」而不是 Windows 服务，是因为服务运行在 Session 0，
 #       本项目自带 Web 看板，计划任务在用户会话里跑更符合个人使用场景，
@@ -16,7 +16,7 @@
 param(
     [switch]$Uninstall,
     [int]$Interval = 1800,
-    [string]$TaskName = 'csmon'
+    [string]$TaskName = 'facet'
 )
 
 $ErrorActionPreference = 'Stop'
@@ -91,7 +91,7 @@ Register-ScheduledTask `
     -Trigger $trigger `
     -Settings $settings `
     -Principal $principal `
-    -Description "youyoumonitor - CS 饰品多源行情监控 (BUFF / 悠悠有品)" | Out-Null
+    -Description "facet - CS 饰品多源行情监控 (BUFF / 悠悠有品)" | Out-Null
 
 Write-Ok "已注册计划任务 $TaskName（登录时自动启动，异常退出 2 分钟后重启）"
 Write-Dim "采集间隔：$Interval 秒"
@@ -105,4 +105,4 @@ Write-Dim "查看状态： Get-ScheduledTask $TaskName | Get-ScheduledTaskInfo"
 Write-Dim "停止：     Stop-ScheduledTask $TaskName"
 Write-Dim "启动：     Start-ScheduledTask $TaskName"
 Write-Dim "卸载：     .\deploy\install-windows.ps1 -Uninstall"
-Write-Dim "日志：     $ProjectDir\logs\csmon.log"
+Write-Dim "日志：     $ProjectDir\logs\facet.log"

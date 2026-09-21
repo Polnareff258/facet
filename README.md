@@ -1,7 +1,12 @@
-# youyoumonitor
+# facet
 
-CS 饰品多源行情监控 —— 盯 **网易 BUFF** 与 **悠悠有品** 两个平台的价格、在售量与求购价，
-自带告警、K 线技术指标、跨平台套利雷达、极致追踪、Web 看板与命令行。
+> 同一个皮肤名之下，有多个决定价格的**切面** —— 磨损、暗金/纪念品、
+> 多普勒相位与宝石档、图案模板，以及「出租收租」这条低买高卖之外的收益路径。
+> facet 把这些切面拆开、分别定价、给出可比较的结论。
+
+CS 饰品市场情报工具，数据源覆盖 **网易 BUFF** 与 **悠悠有品**：
+价格与在售量、求购价、K 线技术指标、跨平台套利雷达、租赁收益分析、
+极致追踪、LLM 第二意见、Web 看板与命令行。
 **Windows / Linux / 树莓派 同一套代码、同一条启动命令。**
 
 ![看板 K 线](docs/dashboard-kline.png)
@@ -45,7 +50,7 @@ sudo ./deploy/install-linux.sh              # systemd（含资源限制与优雅
 ## 配置只需一条命令
 
 ```bash
-python -m csmon setup        # 交互式向导：选预设 → 粘密钥 → 当场验证
+python -m facet setup        # 交互式向导：选预设 → 粘密钥 → 当场验证
 ```
 
 向导**只为缺失的部分提问**，已经配好的会跳过。它把**预设写进 `config.local.yaml`**、
@@ -54,15 +59,15 @@ python -m csmon setup        # 交互式向导：选预设 → 粘密钥 → 当
 也可以一步到位（适合脚本化 / 无交互环境）：
 
 ```bash
-python -m csmon setup llm   --llm-preset deepseek --llm-key sk-xxx
-python -m csmon setup buff  --buff-cookie "session=..."
-python -m csmon setup csqaq --csqaq-token "xxxxx"
+python -m facet setup llm   --llm-preset deepseek --llm-key sk-xxx
+python -m facet setup buff  --buff-cookie "session=..."
+python -m facet setup csqaq --csqaq-token "xxxxx"
 ```
 
 LLM 支持 10 个预设，选一个即可，模型与端点自动带出：
 
 ```bash
-python -m csmon advice presets    # 看全部预设、默认模型、该填哪个密钥变量
+python -m facet advice presets    # 看全部预设、默认模型、该填哪个密钥变量
 ```
 
 ```
@@ -152,8 +157,8 @@ AK-47 | 表面淬火 (久经沙场)
 
 ```bash
 # 采集档位词表
-python -m csmon variants sync "★ M9 Bayonet | Doppler (Factory New)"
-python -m csmon variants show "★ M9 Bayonet | Doppler (Factory New)"
+python -m facet variants sync "★ M9 Bayonet | Doppler (Factory New)"
+python -m facet variants show "★ M9 Bayonet | Doppler (Factory New)"
 
 # 开启档位级求购价监控（config.yaml）
 youpin_direct:
@@ -180,8 +185,8 @@ CS 饰品中文名是社区约定（`★ M9 Bayonet | Bright Water` → `M9 刺�
 所以学一档就能推同皮肤的其它档。手工更正优先级最高，不会被自动覆盖：
 
 ```bash
-python -m csmon names stats
-python -m csmon names set "AK-47 | Redline (Field-Tested)" "AK-47 | 红线 (久经沙场)"
+python -m facet names stats
+python -m facet names set "AK-47 | Redline (Field-Tested)" "AK-47 | 红线 (久经沙场)"
 ```
 
 ### 关注清单（我真正要买/要卖的）
@@ -190,10 +195,10 @@ python -m csmon names set "AK-47 | Redline (Field-Tested)" "AK-47 | 红线 (久�
 后者是「发现」（泛化盯盘）。
 
 ```bash
-python -m csmon focus add "AK-47 | Redline" --intent buy \
+python -m facet focus add "AK-47 | Redline" --intent buy \
         --target 95 --budget 400 --wears FT,MW --priority 1
 # → 自动展开成 AK-47 | Redline (Field-Tested) / (Minimal Wear) 两个标的
-python -m csmon focus ls        # 状态：达到买点 / 接近买点 / 等待回落
+python -m facet focus ls        # 状态：达到买点 / 接近买点 / 等待回落
 ```
 
 ### 租赁收益（第二条收益路径）
@@ -221,9 +226,9 @@ CS 饰品除了低买高卖还能**出租收租**。日租金高不代表收益�
 ```
 
 ```bash
-python -m csmon rent scan            # 采集关注清单的租赁数据
-python -m csmon rent show "★ M9 Bayonet | Doppler (Factory New)"
-python -m csmon rent rank            # 按年化排行
+python -m facet rent scan            # 采集关注清单的租赁数据
+python -m facet rent show "★ M9 Bayonet | Doppler (Factory New)"
+python -m facet rent rank            # 按年化排行
 python tools/demo_rental.py          # 用真实样本演示（不需要 Token）
 ```
 
@@ -244,12 +249,12 @@ python tools/demo_rental.py          # 用真实样本演示（不需要 Token�
 
 ```bash
 # .env 里配置（支持任何 OpenAI 兼容端点）
-#   CSMON_LLM_PRESET=deepseek      # 或 openai/moonshot/dashscope/zhipu/siliconflow
-#   CSMON_LLM_API_KEY=sk-xxxx      # 本机 Ollama 不用密钥：CSMON_LLM_PRESET=ollama
-python -m csmon advice config     # 看当前配置（不回显密钥）
-python -m csmon advice probe      # 连通性自检
-python -m csmon advice ask        # 对关注清单生成建议
-python -m csmon advice ls         # 历史建议
+#   FACET_LLM_PRESET=deepseek      # 或 openai/moonshot/dashscope/zhipu/siliconflow
+#   FACET_LLM_API_KEY=sk-xxxx      # 本机 Ollama 不用密钥：FACET_LLM_PRESET=ollama
+python -m facet advice config     # 看当前配置（不回显密钥）
+python -m facet advice probe      # 连通性自检
+python -m facet advice ask        # 对关注清单生成建议
+python -m facet advice ls         # 历史建议
 ```
 
 > 模型的输出是**第二意见，不是投资建议**。CS2 饰品流动性差、单件差异大、
@@ -292,7 +297,7 @@ python -m csmon advice ls         # 历史建议
 等待 150 秒不恢复。适配器内置 6 小时 IP 级熔断，`buff` 源默认关闭。
 
 ```bash
-python -m csmon setup buff     # 引导抓 Cookie 并当场验证
+python -m facet setup buff     # 引导抓 Cookie 并当场验证
 ```
 
 三条其它实测结论（证据见 [docs/DATA_SOURCES.md](docs/DATA_SOURCES.md)）：
@@ -345,7 +350,7 @@ python -m csmon setup buff     # 引导抓 Cookie 并当场验证
 ```
 bootstrap.py          一键启动器（跨平台，唯一实现）
 start.sh / .ps1 / .cmd 三个平台入口（薄壳）
-csmon/
+facet/
 ├── platform.py       平台探测与调优（Windows/Linux/树莓派）
 ├── doctor.py         启动前自检
 ├── config.py         配置（YAML + .env 自动加载）
@@ -388,57 +393,57 @@ tools/                演示数据、映射迁移等一次性脚本
 
 ```bash
 # 采集 / 运行
-python -m csmon run [--loop] [--interval N] [--source csqaq]
-python -m csmon serve [--host H] [--port P]
-python -m csmon doctor [--no-network] [--json]
+python -m facet run [--loop] [--interval N] [--source csqaq]
+python -m facet serve [--host H] [--port P]
+python -m facet doctor [--no-network] [--json]
 
 # 监控与追踪
-python -m csmon watch add "AK-47 | Redline (Field-Tested)" --below 100 --drop 8
-python -m csmon watch ls / rm "名称"
-python -m csmon extreme add "AK-47 | Redline (Field-Tested)" --platform BUFF \
+python -m facet watch add "AK-47 | Redline (Field-Tested)" --below 100 --drop 8
+python -m facet watch ls / rm "名称"
+python -m facet extreme add "AK-47 | Redline (Field-Tested)" --platform BUFF \
         --interval 30 --price-threshold 0.5 --quiet-start 23 --quiet-end 8
-python -m csmon extreme ls / rm / run
+python -m facet extreme ls / rm / run
 
 # 分析
-python -m csmon kline "AK-47 | Redline (Field-Tested)" --platform BUFF --days 90
-python -m csmon spread --min-percent 3 --min-profit 1
-python -m csmon movers --hours 168 --liquidity
-python -m csmon search "AK-47"
+python -m facet kline "AK-47 | Redline (Field-Tested)" --platform BUFF --days 90
+python -m facet spread --min-percent 3 --min-profit 1
+python -m facet movers --hours 168 --liquidity
+python -m facet search "AK-47"
 
 # 中文名
-python -m csmon names stats
-python -m csmon names show "AK-47 | Redline (Factory New)"
-python -m csmon names set "AK-47 | Redline (Field-Tested)" "AK-47 | 红线 (久经沙场)"
+python -m facet names stats
+python -m facet names show "AK-47 | Redline (Factory New)"
+python -m facet names set "AK-47 | Redline (Field-Tested)" "AK-47 | 红线 (久经沙场)"
 
 # 关注清单（带买卖意图）
-python -m csmon focus add "AK-47 | Redline" --intent buy --target 95 --wears FT,MW
-python -m csmon focus ls / detail "名称" / rm "名称" --expand
+python -m facet focus add "AK-47 | Redline" --intent buy --target 95 --wears FT,MW
+python -m facet focus ls / detail "名称" / rm "名称" --expand
 
 # 图案档位（多普勒相位 / 渐变 / 淬火 / 特殊模板）
-python -m csmon patterns init
-python -m csmon patterns learn "★ 卡兰比特 | 多普勒 (崭新出厂)"
-python -m csmon patterns show "Doppler"
-python -m csmon patterns stats
+python -m facet patterns init
+python -m facet patterns learn "★ 卡兰比特 | 多普勒 (崭新出厂)"
+python -m facet patterns show "Doppler"
+python -m facet patterns stats
 
 # 租赁收益
-python -m csmon rent scan                 # 采集关注清单的租赁数据
-python -m csmon rent show "★ M9 Bayonet | Doppler (Factory New)"
-python -m csmon rent rank --min-liquidity 30
-python -m csmon rent ls / detail "名称"
+python -m facet rent scan                 # 采集关注清单的租赁数据
+python -m facet rent show "★ M9 Bayonet | Doppler (Factory New)"
+python -m facet rent rank --min-liquidity 30
+python -m facet rent ls / detail "名称"
 
 # LLM 建议
-python -m csmon advice config / probe
-python -m csmon advice ask [名称]
-python -m csmon advice ls / show "名称"
+python -m facet advice config / probe
+python -m facet advice ask [名称]
+python -m facet advice ls / show "名称"
 
 # 数据维护
-python -m csmon index status / resolve / scan
-python -m csmon seed                       # 导入参考项目的映射资源
-python -m csmon archive run --keep-days 90
-python -m csmon archive ohlc --days 365
-python -m csmon archive prune-extreme --keep-days 7
-python -m csmon report
-python -m csmon sources / probe
+python -m facet index status / resolve / scan
+python -m facet seed                       # 导入参考项目的映射资源
+python -m facet archive run --keep-days 90
+python -m facet archive ohlc --days 365
+python -m facet archive prune-extreme --keep-days 7
+python -m facet report
+python -m facet sources / probe
 ```
 
 ---

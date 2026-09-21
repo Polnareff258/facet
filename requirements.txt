@@ -1,4 +1,4 @@
-# youyoumonitor 运行依赖（Python 3.11+）
+# facet 运行依赖（Python 3.11+）
 #
 # 说明：本项目刻意保持依赖精简 —— 调度器与限速器自实现，
 # 不引入 APScheduler / pandas，避免为一个监控工具背上重依赖。

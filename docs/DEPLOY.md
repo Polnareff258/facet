@@ -43,8 +43,8 @@ python bootstrap.py --skip-install       # 服务里用：跳过依赖检查加�
 后台运行时会写：
 
 ```
-run/csmon.pid      进程号
-logs/csmon.log     标准输出与错误（追加写）
+run/facet.pid      进程号
+logs/facet.log     标准输出与错误（追加写）
 ```
 
 ---
@@ -93,9 +93,9 @@ sudo ./deploy/install-linux.sh --uninstall  # 卸载
 装好后：
 
 ```bash
-systemctl status csmon
-journalctl -u csmon -f          # 跟随日志
-sudo systemctl restart csmon
+systemctl status facet
+journalctl -u facet -f          # 跟随日志
+sudo systemctl restart facet
 ```
 
 unit 里做了几件容易被忽略的事：
@@ -132,7 +132,7 @@ sudo apt install -y python3 python3-venv python3-pip git
 ### 部署
 
 ```bash
-git clone <你的仓库> ~/youyoumonitor && cd ~/youyoumonitor
+git clone <你的仓库> ~/facet && cd ~/facet
 chmod +x start.sh
 ./start.sh --setup                      # 首次配置（树莓派上约 3-5 分钟）
 ./start.sh --check                      # 自检，确认没问题
@@ -144,18 +144,18 @@ sudo ./deploy/install-linux.sh --user pi   # 装成开机自启服务
 **1. 数据库移出 SD 卡。** 这是最重要的一条 —— 长期高频写入会磨损 SD 卡：
 
 ```bash
-sudo mkdir -p /mnt/csmon-data
-# 挂载你的 USB/SSD 到 /mnt/csmon-data（写进 /etc/fstab 保证开机自动挂载）
-echo "CSMON_DB=/mnt/csmon-data/csmon.db" >> ~/youyoumonitor/.env
-sudo systemctl restart csmon
+sudo mkdir -p /mnt/facet-data
+# 挂载你的 USB/SSD 到 /mnt/facet-data（写进 /etc/fstab 保证开机自动挂载）
+echo "FACET_DB=/mnt/facet-data/facet.db" >> ~/facet/.env
+sudo systemctl restart facet
 ```
 
 **2. 拉长轮询间隔省资源。** 启动器在低内存/树莓派上已自动把默认轮询调到 3600 秒、
 并发降到 2；想进一步调：
 
 ```bash
-echo "CSMON_INTERVAL=7200" >> ~/youyoumonitor/.env   # 2 小时一次
-sudo systemctl restart csmon
+echo "FACET_INTERVAL=7200" >> ~/facet/.env   # 2 小时一次
+sudo systemctl restart facet
 ```
 
 **3. 只跑采集不起看板。** 需要看图时再从笔记本上开：
@@ -190,8 +190,8 @@ ssh -L 8787:127.0.0.1:8787 pi@<树莓派IP>
 
 ```bash
 # 每周跑一次，或加进 crontab
-0 4 * * 0 cd ~/youyoumonitor && .venv/bin/python -m csmon archive run --keep-days 90
-0 4 * * 0 cd ~/youyoumonitor && .venv/bin/python -m csmon archive prune-extreme --keep-days 7
+0 4 * * 0 cd ~/facet && .venv/bin/python -m facet archive run --keep-days 90
+0 4 * * 0 cd ~/facet && .venv/bin/python -m facet archive prune-extreme --keep-days 7
 ```
 
 ---
@@ -203,25 +203,25 @@ ssh -L 8787:127.0.0.1:8787 pi@<树莓派IP>
 ```bash
 python bootstrap.py --check
 # 或在已有环境里
-python -m csmon doctor
+python -m facet doctor
 ```
 
 | 症状 | 原因与处理 |
 | --- | --- |
 | 双击 `start.cmd` 刷屏 `'xxx' 不是内部或外部命令`、`'hon.exe"'`、`'ootstrap.py'`，并夹杂乱码中文 | **文件编码与系统代码页冲突**。cmd.exe 按系统 OEM 代码页（中文 Windows 是 936/GBK）读 `.cmd`；若文件是 UTF-8，中文注释会被错误解码，字节错位时**会吃掉换行符把两行合并**，命令碎片就被当成命令执行。<br>→ 已修：`start.cmd` 改为**纯 ASCII**，中文提示由 Python 输出。若你改过该文件，请保持纯 ASCII。 |
 | PowerShell 里 `.ps1` 中文乱码 / 报语法错误 | Windows PowerShell 5.1 读**无 BOM** 的 `.ps1` 时按系统 ANSI（GBK）解码。<br>→ 已修：`start.ps1` 与 `deploy/install-windows.ps1` 保存为 **UTF-8 with BOM**。你改动后请确保编辑器保留 BOM（VS Code 右下角选 `UTF-8 with BOM`）。 |
-| 输出里 `✓` `─` `★` 变成 `?` 或直接报 `UnicodeEncodeError` | 控制台代码页不是 UTF-8。<br>→ 已修：`csmon/console.py` 在启动时把控制台切到 UTF-8，切不动就自动降级为 ASCII 符号（`OK` / `-` / `*`）。可用 `python -m csmon doctor` 查看当前控制台编码状态。 |
+| 输出里 `✓` `─` `★` 变成 `?` 或直接报 `UnicodeEncodeError` | 控制台代码页不是 UTF-8。<br>→ 已修：`facet/console.py` 在启动时把控制台切到 UTF-8，切不动就自动降级为 ASCII 符号（`OK` / `-` / `*`）。可用 `python -m facet doctor` 查看当前控制台编码状态。 |
 | 运行完工具后，当前终端窗口里其它命令的中文变乱码 | 工具把控制台切到了 UTF-8，但进程被**强制终止**（任务管理器结束进程、`job_kill`）时来不及还原。<br>→ 正常 Ctrl+C 退出会自动还原。已乱码时执行 `chcp 936` 手动恢复。 |
 | `找不到 Python 3.10+` | Debian/Pi 上 `sudo apt install -y python3 python3-venv python3-pip` |
 | `创建虚拟环境失败` / `ensurepip is not available` | 缺 `python3-venv`，同上安装 |
-| 依赖安装卡住或失败 | 换镜像：`echo "CSMON_PIP_EXTRA_INDEX=https://pypi.tuna.tsinghua.edu.cn/simple" >> .env`；或先跑 `./start.sh --setup` 看完整报错 |
+| 依赖安装卡住或失败 | 换镜像：`echo "FACET_PIP_EXTRA_INDEX=https://pypi.tuna.tsinghua.edu.cn/simple" >> .env`；或先跑 `./start.sh --setup` 看完整报错 |
 | 32 位 ARM 编译 `pydantic-core` 失败 | 换 64 位系统（首选），或装 `build-essential python3-dev` 与 Rust 工具链 |
 | 看板打不开 | 确认绑定地址：默认 `127.0.0.1:8787`，只能本机访问；远程用 SSH 转发 |
 | `⚠ 缺少 CSQAQ_TOKEN` | 到 [csqaq.com](https://csqaq.com) 注册取 Token，**并在官网绑定本机白名单 IP**，写进 `.env` |
-| 采到 0 条报价 | 看 `python -m csmon sources` 确认有可用源；再 `python -m csmon probe` 逐个测 |
+| 采到 0 条报价 | 看 `python -m facet sources` 确认有可用源；再 `python -m facet probe` 逐个测 |
 | 告警不推送 | `config.yaml` 里 `notify.enabled` 默认 `false`；先用 `dry_run: true` 验证规则 |
 | Windows 提示禁止运行脚本 | 用 `powershell -ExecutionPolicy Bypass -File .\start.ps1`，或直接双击 `start.cmd` |
-| systemd 服务起不来 | `journalctl -u csmon -n 50 --no-pager`；多数是路径或权限问题，重跑 `install-linux.sh` 会重建 unit |
+| systemd 服务起不来 | `journalctl -u facet -n 50 --no-pager`；多数是路径或权限问题，重跑 `install-linux.sh` 会重建 unit |
 
 ### 关于 Windows 下的文件编码（重要，别踩）
 
@@ -245,8 +245,8 @@ cd <项目目录>
 git pull
 python bootstrap.py --reinstall --check    # 重装依赖（requirements 变了才需要）
 # 重启服务
-sudo systemctl restart csmon                 # Linux/Pi
-Stop-ScheduledTask csmon; Start-ScheduledTask csmon   # Windows
+sudo systemctl restart facet                 # Linux/Pi
+Stop-ScheduledTask facet; Start-ScheduledTask facet   # Windows
 ```
 
 数据库 schema 是**向前兼容**的（全部用 `CREATE TABLE IF NOT EXISTS`，

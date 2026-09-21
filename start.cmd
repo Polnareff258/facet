@@ -1,6 +1,6 @@
 @echo off
 REM ============================================================
-REM  youyoumonitor - one-click launcher for Windows
+REM  facet - one-click launcher for Windows
 REM  (double-click this file, or run from a terminal)
 REM
 REM  Usage:

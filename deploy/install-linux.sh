@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
-# 把 youyoumonitor 安装为 systemd 服务（Linux / Raspberry Pi）
+# 把 facet 安装为 systemd 服务（Linux / Raspberry Pi）
 #
 #   sudo ./deploy/install-linux.sh              # 安装并启动
 #   sudo ./deploy/install-linux.sh --uninstall  # 卸载
 #   sudo ./deploy/install-linux.sh --user pi    # 指定运行用户（默认取 sudo 调用者）
 #
 # 装好后常用命令：
-#   systemctl status csmon
-#   journalctl -u csmon -f          # 跟随日志
-#   systemctl restart csmon
+#   systemctl status facet
+#   journalctl -u facet -f          # 跟随日志
+#   systemctl restart facet
 #
 # 树莓派注意：本脚本会提示把数据库移出 SD 卡（长期写入会磨损 SD 卡）。
 
@@ -16,7 +16,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
-UNIT_NAME="csmon"
+UNIT_NAME="facet"
 UNIT_PATH="/etc/systemd/system/${UNIT_NAME}.service"
 
 GREEN=$'\033[32m'; YELLOW=$'\033[33m'; RED=$'\033[31m'; DIM=$'\033[2m'; RESET=$'\033[0m'
@@ -75,11 +75,11 @@ if [ ! -x "$VENV_PY" ]; then
 fi
 
 # ── 生成 unit ──────────────────────────────────────────────
-# 说明：这里用 bootstrap.py --foreground 而不是直接跑 csmon，
+# 说明：这里用 bootstrap.py --foreground 而不是直接跑 facet，
 # 是为了让「依赖自检 + 平台调优 + 采集与看板同进程」这套逻辑在服务里也生效。
 cat > "$UNIT_PATH" <<EOF
 [Unit]
-Description=youyoumonitor - CS 饰品多源行情监控 (BUFF / 悠悠有品)
+Description=facet - CS 饰品多源行情监控 (BUFF / 悠悠有品)
 Documentation=file://${PROJECT_DIR}/README.md
 After=network-online.target
 Wants=network-online.target
@@ -90,7 +90,7 @@ User=${RUN_USER}
 WorkingDirectory=${PROJECT_DIR}
 Environment=PYTHONUNBUFFERED=1
 Environment=NO_COLOR=1
-ExecStart=${VENV_PY} ${PROJECT_DIR}/bootstrap.py --foreground --skip-install --interval \${CSMON_INTERVAL:-1800}
+ExecStart=${VENV_PY} ${PROJECT_DIR}/bootstrap.py --foreground --skip-install --interval \${FACET_INTERVAL:-1800}
 Restart=always
 RestartSec=15
 # 优雅停止：给采集循环留出收尾时间
@@ -138,10 +138,10 @@ if [ -r /proc/device-tree/model ] && grep -qi "raspberry pi" /proc/device-tree/m
   echo
   warn "树莓派提示：数据库默认在 ${PROJECT_DIR}/data/（SD 卡上）"
   dim "长期高频写入会磨损 SD 卡，建议改到 USB/SSD："
-  dim "  1) 挂载外置盘到 /mnt/csmon-data"
-  dim "  2) 在 ${PROJECT_DIR}/.env 里设置 CSMON_DB=/mnt/csmon-data/csmon.db"
+  dim "  1) 挂载外置盘到 /mnt/facet-data"
+  dim "  2) 在 ${PROJECT_DIR}/.env 里设置 FACET_DB=/mnt/facet-data/facet.db"
   dim "  3) sudo systemctl restart ${UNIT_NAME}"
-  dim "另外可把轮询拉长以省资源：在 .env 里设 CSMON_INTERVAL=3600"
+  dim "另外可把轮询拉长以省资源：在 .env 里设 FACET_INTERVAL=3600"
 fi
 
 # ── 看板访问提醒 ───────────────────────────────────────────

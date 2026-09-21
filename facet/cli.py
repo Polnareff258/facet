@@ -1,4 +1,4 @@
-"""命令行入口：python -m csmon <命令>。
+"""命令行入口：python -m facet <命令>。
 
 命令概览
   run        跑一轮采集（--loop 变常驻）
@@ -83,7 +83,7 @@ def cmd_watch(args: argparse.Namespace, config: Config) -> int:
         if args.action == "ls":
             rules = store.list_watch(enabled_only=False)
             if not rules:
-                print("监控清单为空。用 `csmon watch add \"AK-47 | Redline (Field-Tested)\"` 添加")
+                print("监控清单为空。用 `facet watch add \"AK-47 | Redline (Field-Tested)\"` 添加")
                 return 0
             print(f"{'饰品':<52} {'跌破':>8} {'涨破':>8} {'跌%':>6} {'涨%':>6}  平台")
             for r in rules:
@@ -113,7 +113,7 @@ def cmd_watch(args: argparse.Namespace, config: Config) -> int:
                 print("  提示：未设置阈值，仅记录价格。可加 --below 100 或 --drop 8")
             if args.buff_id is None or args.youpin_id is None:
                 print("  提示：缺少平台 ID 时，直连源会跳过该饰品；"
-                      "可用 `csmon index resolve` 或 `csmon watch add ... --buff-id N` 补齐")
+                      "可用 `facet index resolve` 或 `facet watch add ... --buff-id N` 补齐")
             return 0
 
         if args.action == "rm":
@@ -227,7 +227,7 @@ def cmd_report(args: argparse.Namespace, config: Config) -> int:
                       f"{_f(r['sell_price']):>9} {_s(r['sell_count']):>7} "
                       f"{_f(r['bid_price']):>9}  {r['source']}")
         else:
-            print("还没有报价数据。先运行 `python -m csmon run`")
+            print("还没有报价数据。先运行 `python -m facet run`")
 
         alerts = store.recent_alerts(limit=args.alerts)
         if alerts:
@@ -250,7 +250,7 @@ def cmd_kline(args: argparse.Namespace, config: Config) -> int:
         bars = bundle["bars"]
         if not bars:
             print(f"没有 {args.name} 在 {args.platform.upper()} 的历史数据。")
-            print("先跑一轮采集：python -m csmon run")
+            print("先跑一轮采集：python -m facet run")
             return 1
 
         print(f"\n{args.name}  @ {args.platform.upper()}  共 {len(bars)} 根日线"
@@ -361,7 +361,7 @@ def cmd_extreme(args: argparse.Namespace, config: Config) -> int:
             rows = store.list_extreme(enabled_only=False)
             if not rows:
                 print("还没有极致追踪任务。")
-                print('添加：python -m csmon extreme add "AK-47 | Redline (Field-Tested)" '
+                print('添加：python -m facet extreme add "AK-47 | Redline (Field-Tested)" '
                       '--platform BUFF --interval 30')
                 return 0
             print(f"{'饰品':<42} {'平台':<7} {'间隔':>6} {'价格规则':>16} "
@@ -390,7 +390,7 @@ def cmd_extreme(args: argparse.Namespace, config: Config) -> int:
                 enabled=1,
             )
             print(f"已添加极致追踪：{args.name} @ {platform}，间隔 {args.interval}s")
-            print("  启动追踪：python bootstrap.py   （或 python -m csmon extreme run）")
+            print("  启动追踪：python bootstrap.py   （或 python -m facet extreme run）")
             return 0
 
         if args.action == "rm":
@@ -482,8 +482,8 @@ def cmd_search(args: argparse.Namespace, config: Config) -> int:
         rows = store.search_items(args.keyword, limit=args.limit)
         if not rows:
             print(f"没有匹配「{args.keyword}」的饰品。")
-            print("本地库来自：python -m csmon seed（映射资源）"
-                  "或 python -m csmon index scan（BUFF ID 扫描）")
+            print("本地库来自：python -m facet seed（映射资源）"
+                  "或 python -m facet index scan（BUFF ID 扫描）")
             return 1
         print(f"全文索引：{'可用' if store.fts_enabled else '不可用（已退回 LIKE）'}\n")
         print(f"{'饰品':<54} {'BUFF ID':>9} {'悠悠 ID':>9}")
@@ -526,12 +526,12 @@ def cmd_names(args: argparse.Namespace, config: Config) -> int:
                     print(f"    {src:<14} {n}")
             if stats["coverage"] < 0.5:
                 print("\n提示：中文名在采集时自动回收。先跑几轮采集，覆盖率会自己涨上去：")
-                print("  python -m csmon run")
+                print("  python -m facet run")
             return 0
 
         if args.action == "set":
             if not args.name or not args.cn:
-                print("用法：csmon names set \"AK-47 | Redline (Field-Tested)\" \"AK-47 | 红线 (久经沙场)\"",
+                print("用法：facet names set \"AK-47 | Redline (Field-Tested)\" \"AK-47 | 红线 (久经沙场)\"",
                       file=sys.stderr)
                 return 2
             from .names import NameResolver as _NR
@@ -545,7 +545,7 @@ def cmd_names(args: argparse.Namespace, config: Config) -> int:
             names = ([args.name] if args.name
                      else [r.market_hash_name for r in store.list_watch()])
             if not names:
-                print("没有可展示的饰品（可用 csmon watch ls 查看监控清单）")
+                print("没有可展示的饰品（可用 facet watch ls 查看监控清单）")
                 return 0
             for name in names:
                 meta = resolver.resolve_with_meta(name)
@@ -566,9 +566,9 @@ def cmd_names(args: argparse.Namespace, config: Config) -> int:
             print(f"当前已收录 {stats['learned']} 条，覆盖 "
                   f"{stats['coverage']:.1%} 的库内饰品。")
             if stats["coverage"] < 0.5:
-                print("多跑几轮采集覆盖率会自己涨：python -m csmon run")
+                print("多跑几轮采集覆盖率会自己涨：python -m facet run")
             print("\n如果某个饰品的中文名不对，手工覆盖（优先级最高，不会被自动改回）：")
-            print('  python -m csmon names set "英文名" "中文名"')
+            print('  python -m facet names set "英文名" "中文名"')
             return 0
 
         print(f"未知操作：{args.action}", file=sys.stderr)
@@ -592,7 +592,7 @@ def cmd_focus(args: argparse.Namespace, config: Config) -> int:
             if not payload["counts"]["buy"] and not payload["counts"]["sell"] \
                     and not payload["counts"]["watch"]:
                 print("关注清单为空。添加方式：")
-                print('  python -m csmon focus add "AK-47 | Redline" --intent buy '
+                print('  python -m facet focus add "AK-47 | Redline" --intent buy '
                       '--target 95 --wears FT,MW --budget 300')
                 return 0
 
@@ -697,7 +697,7 @@ def cmd_patterns(args: argparse.Namespace, config: Config) -> int:
                 matches = [row["market_hash_name"]
                            for row in store.search_items(args.name, limit=20)]
                 if not matches:
-                    print(f"本地库没有匹配「{args.name}」的饰品（先跑 csmon seed 或 index）")
+                    print(f"本地库没有匹配「{args.name}」的饰品（先跑 facet seed 或 index）")
                     return 1
                 from .names import NameResolver
                 resolver = NameResolver(store)
@@ -713,8 +713,8 @@ def cmd_patterns(args: argparse.Namespace, config: Config) -> int:
                           f"种子规则 {len(rs.seed_rules)}")
                 if not table.rule_sets:
                     print("\n规则表为空。两条路：")
-                    print("  1) 实测学习（推荐）：python -m csmon patterns learn \"饰品名\"")
-                    print("  2) 手工填表：python -m csmon patterns init 后编辑 patterns.yaml")
+                    print("  1) 实测学习（推荐）：python -m facet patterns learn \"饰品名\"")
+                    print("  2) 手工填表：python -m facet patterns init 后编辑 patterns.yaml")
             return 0
 
         if args.action == "learn":
@@ -725,7 +725,7 @@ def cmd_patterns(args: argparse.Namespace, config: Config) -> int:
             item = store.get_item(args.name)
             if not item or not item.get("buff_goods_id"):
                 print(f"本地库没有 {args.name} 的 buff_goods_id。")
-                print("先补 ID：python -m csmon watch add \"名称\" --buff-id 43076")
+                print("先补 ID：python -m facet watch add \"名称\" --buff-id 43076")
                 return 1
 
             adapter = BuffDirectAdapter(config.source("buff_direct"))
@@ -738,7 +738,7 @@ def cmd_patterns(args: argparse.Namespace, config: Config) -> int:
 
             if not listings:
                 print("没有抓到明细（可能被 BUFF 风控拦下，或该饰品无挂单）")
-                print("检查：python -m csmon probe")
+                print("检查：python -m facet probe")
                 return 1
 
             samples = [{"market_hash_name": args.name,
@@ -808,8 +808,8 @@ def cmd_advice(args: argparse.Namespace, config: Config) -> int:
                 if name in PRESET_SIGNUP:
                     print(f"                 申请：{PRESET_SIGNUP[name]}")
                 print()
-            print("配好之后：python -m csmon setup llm   （交互式，只问该问的）")
-            print("                            python -m csmon advice probe   （验证）")
+            print("配好之后：python -m facet setup llm   （交互式，只问该问的）")
+            print("                            python -m facet advice probe   （验证）")
             return 0
 
         if args.action == "config":
@@ -820,7 +820,7 @@ def cmd_advice(args: argparse.Namespace, config: Config) -> int:
             if config.local_path:
                 print(f"\n本地配置：{config.local_path}")
             print("\n最快接入方式（推荐用向导，一行命令）：")
-            print("  python -m csmon setup llm")
+            print("  python -m facet setup llm")
             print("\n或手工只改两处：")
             print("  config.local.yaml:  llm: {preset: deepseek}")
             print("  .env:               DEEPSEEK_API_KEY=sk-xxxx")
@@ -838,9 +838,9 @@ def cmd_advice(args: argparse.Namespace, config: Config) -> int:
             else:
                 print(f"✗ {result['error']}")
                 print("\n排查：")
-                print("  1) 没配就走本机模型：python -m csmon setup llm 选 Ollama")
-                print("  2) 云端模型检查密钥与余额：python -m csmon setup llm")
-                print("  3) 看预设列表：python -m csmon advice presets")
+                print("  1) 没配就走本机模型：python -m facet setup llm 选 Ollama")
+                print("  2) 云端模型检查密钥与余额：python -m facet setup llm")
+                print("  3) 看预设列表：python -m facet advice presets")
             return 0 if result["ok"] else 1
 
         if args.action == "ask":
@@ -848,7 +848,7 @@ def cmd_advice(args: argparse.Namespace, config: Config) -> int:
                      else [r.market_hash_name for r in store.list_focus()])
             if not names:
                 print("没有可分析的标的。")
-                print('先加关注：python -m csmon focus add "AK-47 | Redline" --intent buy --target 95')
+                print('先加关注：python -m facet focus add "AK-47 | Redline" --intent buy --target 95')
                 return 1
 
             from .names import NameResolver
@@ -856,7 +856,7 @@ def cmd_advice(args: argparse.Namespace, config: Config) -> int:
             table = PatternTable.load(args.rules)
             client = build_client()
             if not client.config.is_configured():
-                print("LLM 未配置。运行配置向导：python -m csmon setup llm")
+                print("LLM 未配置。运行配置向导：python -m facet setup llm")
                 client.close()
                 return 1
             print(f"使用 {client.config.provider} / {client.config.resolved_model()}")
@@ -901,7 +901,7 @@ def cmd_advice(args: argparse.Namespace, config: Config) -> int:
             rows = store.recent_advice(limit=args.limit)
             if not rows:
                 print("还没有生成过建议。")
-                print("  python -m csmon advice ask")
+                print("  python -m facet advice ask")
                 return 0
             from .names import NameResolver
             resolver = NameResolver(store)
@@ -953,7 +953,7 @@ def cmd_variants(args: argparse.Namespace, config: Config) -> int:
 
             if not vocab.terms:
                 print("\n  尚未采集到该饰品的档位词表。")
-                print("  采集方式：python -m csmon variants sync \"饰品名\"")
+                print("  采集方式：python -m facet variants sync \"饰品名\"")
                 print("  （需要该饰品有悠悠有品 templateId）")
                 return 1
 
@@ -983,8 +983,8 @@ def cmd_variants(args: argparse.Namespace, config: Config) -> int:
                 item = store.get_item(args.name)
                 if not item or not item.get("youpin_template_id"):
                     print(f"本地库没有 {args.name} 的悠悠有品 templateId。")
-                    print("导入映射：python -m csmon seed")
-                    print("或手工指定：python -m csmon watch add \"名称\" --youpin-id 822")
+                    print("导入映射：python -m facet seed")
+                    print("或手工指定：python -m facet watch add \"名称\" --youpin-id 822")
                     return 1
                 candidates.append((args.name, int(item["youpin_template_id"])))
             else:
@@ -998,7 +998,7 @@ def cmd_variants(args: argparse.Namespace, config: Config) -> int:
                 if args.limit:
                     candidates = candidates[:args.limit]
                 if not candidates:
-                    print("本地库没有变体敏感的饰品（先跑 csmon seed 导入映射）")
+                    print("本地库没有变体敏感的饰品（先跑 facet seed 导入映射）")
                     return 1
 
             print(f"将从悠悠求购接口采集 {len(candidates)} 个饰品的档位词表")
@@ -1110,7 +1110,7 @@ def cmd_rent(args: argparse.Namespace, config: Config) -> int:
             cfg = config.source("csqaq")
             if not cfg.api_token:
                 print("租赁数据来自 CSQAQ（授权接口）。先配置 Token：")
-                print("  python -m csmon setup csqaq")
+                print("  python -m facet setup csqaq")
                 return None
             return CsqaqAdapter(cfg)
 
@@ -1126,7 +1126,7 @@ def cmd_rent(args: argparse.Namespace, config: Config) -> int:
             good_id = adapter.find_good_id(args.name)
             if not good_id:
                 print(f"CSQAQ 找不到「{args.name}」。")
-                print("名称需为 Steam 官方 market_hash_name，可先用 csmon search 确认。")
+                print("名称需为 Steam 官方 market_hash_name，可先用 facet search 确认。")
                 return 1
 
             goods = adapter.fetch_good_detail(good_id)
@@ -1150,7 +1150,7 @@ def cmd_rent(args: argparse.Namespace, config: Config) -> int:
                 names = [r.market_hash_name for r in store.list_watch()]
             if not names:
                 print("没有可扫描的标的。先加关注：")
-                print('  python -m csmon focus add "AK-47 | Redline" --intent buy')
+                print('  python -m facet focus add "AK-47 | Redline" --intent buy')
                 return 1
             if args.limit:
                 names = names[:args.limit]
@@ -1197,7 +1197,7 @@ def cmd_rent(args: argparse.Namespace, config: Config) -> int:
         if args.action == "rank":
             rows = store.latest_rent_all(limit=2000)
             if not rows:
-                print("租赁库为空。先采集：python -m csmon rent scan")
+                print("租赁库为空。先采集：python -m facet rent scan")
                 return 0
 
             ranked: list[tuple[Any, Any]] = []
@@ -1241,7 +1241,7 @@ def cmd_rent(args: argparse.Namespace, config: Config) -> int:
                   f"{stats['items']} 个饰品，其中 {stats['items_with_rent']} 个有租价")
             rows = store.latest_rent_all(limit=args.limit)
             if not rows:
-                print("（空）先采集：python -m csmon rent scan")
+                print("（空）先采集：python -m facet rent scan")
                 return 0
             print(f"\n{'短租日租':>9} {'长租日租':>9} {'短租年化':>9} {'长租年化':>9} "
                   f"{'出租挂单':>8} 饰品")
@@ -1268,7 +1268,7 @@ def cmd_rent(args: argparse.Namespace, config: Config) -> int:
             row = store.latest_rent_snapshot(args.name)
             if not row:
                 print("本地没有该饰品的租赁数据。先执行：")
-                print(f'  python -m csmon rent show "{args.name}"')
+                print(f'  python -m facet rent show "{args.name}"')
                 return 1
             snapshot = _snapshot_from_row(row)
             if snapshot is None:
@@ -1561,12 +1561,12 @@ def _s(v: object) -> str:
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        prog="csmon",
+        prog="facet",
         description="CS 饰品多源行情监控（BUFF / 悠悠有品）",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=__doc__,
     )
-    parser.add_argument("--version", action="version", version=f"csmon {__version__}")
+    parser.add_argument("--version", action="version", version=f"facet {__version__}")
     parser.add_argument("-c", "--config", default=None, help="配置文件路径（默认 config.yaml）")
     parser.add_argument("--log-level", default=None, help="DEBUG/INFO/WARNING/ERROR")
     sub = parser.add_subparsers(dest="command", required=True)

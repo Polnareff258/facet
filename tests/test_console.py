@@ -11,7 +11,7 @@ from pathlib import Path
 
 import pytest
 
-from csmon import console as console_mod
+from facet import console as console_mod
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -167,8 +167,8 @@ def test_service_unit_script_is_valid_utf8() -> None:
 
 def test_doctor_reports_console_encoding(tmp_path: Path) -> None:
     """自检报告要包含控制台编码状态，便于远程排错。"""
-    from csmon.config import Config, NotifyConfig, SourceConfig, WebConfig
-    from csmon.doctor import run_checks
+    from facet.config import Config, NotifyConfig, SourceConfig, WebConfig
+    from facet.doctor import run_checks
 
     cfg = Config(database=str(tmp_path / "d.db"),
                  sources={"mock": SourceConfig(name="mock", enabled=True)},

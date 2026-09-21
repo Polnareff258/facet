@@ -1,4 +1,4 @@
-﻿# youyoumonitor 一键启动（Windows PowerShell）
+﻿# facet 一键启动（Windows PowerShell）
 #
 #   .\start.ps1                 # 建环境 → 装依赖 → 自检 → 启动采集+看板
 #   .\start.ps1 --setup         # 只准备环境

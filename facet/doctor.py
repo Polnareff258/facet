@@ -127,7 +127,7 @@ def _check_config(report: Report, config: Config) -> None:
         report.add("监控清单（配置）", LEVEL_OK, f"{len(config.watchlist)} 条")
     else:
         report.add("监控清单（配置）", LEVEL_WARN, "config.yaml 里没有 watchlist",
-                   '用 python -m csmon watch add "AK-47 | Redline (Field-Tested)" --below 100 添加')
+                   '用 python -m facet watch add "AK-47 | Redline (Field-Tested)" --below 100 添加')
 
 
 def _check_database(report: Report, config: Config) -> None:
@@ -135,12 +135,12 @@ def _check_database(report: Report, config: Config) -> None:
     parent = db_path.parent if str(db_path.parent) not in ("", ".") else Path(".")
     try:
         parent.mkdir(parents=True, exist_ok=True)
-        probe = parent / ".csmon_write_probe"
+        probe = parent / ".facet_write_probe"
         probe.write_text("ok", encoding="utf-8")
         probe.unlink()
     except OSError as exc:
         report.add("数据库可写", LEVEL_FAIL, f"{parent} 不可写：{exc}",
-                   "换一个可写目录，或在 .env 里设置 CSMON_DB=<可写路径>")
+                   "换一个可写目录，或在 .env 里设置 FACET_DB=<可写路径>")
         return
 
     if db_path.exists():
@@ -175,7 +175,7 @@ def _check_credentials(report: Report, config: Config) -> None:
         report.add("缺少凭证的源", LEVEL_WARN, "、".join(unusable),
                    "CSQAQ_TOKEN 是唯一同时覆盖 BUFF 与悠悠有品在售价的源，"
                    "建议优先在 https://csqaq.com 注册并绑定白名单 IP；"
-                   "或运行 python -m csmon setup 交互式配置")
+                   "或运行 python -m facet setup 交互式配置")
 
     if not usable and not unusable:
         report.add("可用数据源", LEVEL_FAIL, "没有任何启用的数据源",
@@ -193,13 +193,13 @@ def _check_buff_capability(report: Report, config: Config) -> None:
     if scfg.cookie or config.source(SOURCE_BUFF_DIRECT).cookie:
         report.add("BUFF 模式", LEVEL_OK,
                    "已配置 Cookie：在售价 + 求购价 + 按名称搜索 + 档位筛选",
-                   "若搜索失效说明 Cookie 过期，重新复制一次：python -m csmon setup buff")
+                   "若搜索失效说明 Cookie 过期，重新复制一次：python -m facet setup buff")
     else:
         report.add("BUFF 模式", LEVEL_WARN,
                    "匿名模式：可用在售价 + 求购价；无搜索与档位筛选",
                    "匿名额度会被用量触发的风控关闭。配置 Cookie 可解锁搜索，"
                    "也就省掉了扫描 goods_id（那正是触发风控的操作）："
-                   "python -m csmon setup buff")
+                   "python -m facet setup buff")
 
 
 def _check_llm(report: Report, config: Config) -> None:
@@ -218,10 +218,10 @@ def _check_llm(report: Report, config: Config) -> None:
     elif config.llm.preset:
         report.add("LLM 接入", LEVEL_WARN,
                    f"预设已选（{config.llm.preset}）但缺少密钥 {cfg.api_key_env}",
-                   "运行 python -m csmon setup llm 补上密钥")
+                   "运行 python -m facet setup llm 补上密钥")
     else:
         report.add("LLM 接入", LEVEL_WARN, "未配置",
-                   "需要交易建议时再配：python -m csmon setup llm（选预设 + 粘密钥）")
+                   "需要交易建议时再配：python -m facet setup llm（选预设 + 粘密钥）")
 
 
 def _check_network(report: Report, config: Config, timeout: float = 8.0) -> None:
@@ -327,7 +327,7 @@ def run_checks(config: Config, network: bool = True,
 
 
 def format_report(report: Report) -> str:
-    lines = ["", "=" * 66, "  youyoumonitor 自检报告", "=" * 66,
+    lines = ["", "=" * 66, "  facet 自检报告", "=" * 66,
              report.render(verbose=True)]
     if report.failed:
         lines.append("")

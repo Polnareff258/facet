@@ -248,7 +248,7 @@ BUFF 的匿名窗口是「会被用量关闭、关闭后持久」的资源。因
    避免继续无效请求、也避免把该 IP 的其它 BUFF 访问一并拖累。
    测试 `test_buff_direct_login_required_trips_ip_circuit_breaker` 钉住了这个行为。
 
-3. **扫描器加时间预算**：`csmon index scan --max-seconds N`，
+3. **扫描器加时间预算**：`facet index scan --max-seconds N`，
    日常只用 `index resolve`（找到目标即停，不遍历全空间）。
 
 ---

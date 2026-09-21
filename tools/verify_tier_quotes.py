@@ -10,8 +10,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from csmon.config import load_config                      # noqa: E402
-from csmon.sources.youpin_direct import YouPinDirectAdapter  # noqa: E402
+from facet.config import load_config                      # noqa: E402
+from facet.sources.youpin_direct import YouPinDirectAdapter  # noqa: E402
 
 # 实测确认过的 templateId（来自随包映射资源）
 TARGETS = [

@@ -32,7 +32,7 @@
 
 ## 二、名称层：确定性解析
 
-`csmon/skins.py` 把名称解析成结构化变体：
+`facet/skins.py` 把名称解析成结构化变体：
 
 ```
 ★  StatTrak™  AK-47 | Redline  (Field-Tested)
@@ -57,7 +57,7 @@
 你只需要给出基础名，工具负责展开成具体变体：
 
 ```bash
-python -m csmon focus add "AK-47 | Redline" --intent buy --target 95 --wears FT,MW
+python -m facet focus add "AK-47 | Redline" --intent buy --target 95 --wears FT,MW
 # → AK-47 | Redline (Field-Tested)
 # → AK-47 | Redline (Minimal Wear)
 ```
@@ -129,12 +129,12 @@ AWP | 渐变之色 (崭新出厂)
 
 ```bash
 # 1. 采集档位词表（每个饰品几秒钟）
-python -m csmon variants sync "★ M9 Bayonet | Doppler (Factory New)"
+python -m facet variants sync "★ M9 Bayonet | Doppler (Factory New)"
 # 或批量采集所有变体敏感且已有 templateId 的饰品
-python -m csmon variants sync --limit 40
+python -m facet variants sync --limit 40
 
 # 2. 查看某饰品有哪些档位
-python -m csmon variants show "★ M9 Bayonet | Doppler (Factory New)"
+python -m facet variants show "★ M9 Bayonet | Doppler (Factory New)"
 ```
 
 ```bash
@@ -167,10 +167,10 @@ youpin_direct:
 ### 关于 `paint_seed` 反推（保留但降级为辅助）
 
 早期做法是「从挂单的 `paint_seed` + 价格分布反推哪些种子贵」。
-现在有平台权威词表，这条路径降级为辅助手段，实现仍保留在 `csmon/patterns.py`：
+现在有平台权威词表，这条路径降级为辅助手段，实现仍保留在 `facet/patterns.py`：
 
 ```bash
-python -m csmon patterns learn "饰品名"   # 抓挂单 → 按种子聚合价格 → 标出溢价种子
+python -m facet patterns learn "饰品名"   # 抓挂单 → 按种子聚合价格 → 标出溢价种子
 ```
 
 它在两种情况下仍有用：
@@ -210,9 +210,9 @@ CS 饰品的中文名是**社区约定**，不是英文逐词直译：
 同皮肤的「崭新出厂」也能显示中文（`derived`），不必为每个变体查一次。
 
 ```bash
-python -m csmon names stats                              # 覆盖率与来源分布
-python -m csmon names show "AK-47 | Redline (Factory New)"  # 看具体条目
-python -m csmon names set "英文名" "正确中文名"            # 手工更正（优先级最高）
+python -m facet names stats                              # 覆盖率与来源分布
+python -m facet names show "AK-47 | Redline (Factory New)"  # 看具体条目
+python -m facet names set "英文名" "正确中文名"            # 手工更正（优先级最高）
 ```
 
 手工录入的优先级最高，**不会被自动收录覆盖** —— 你纠正一次就永久生效。
@@ -231,10 +231,10 @@ python -m csmon names set "英文名" "正确中文名"            # 手工更�
 | 筛选 | 无 | 可接受的磨损 / 品质 / 档位 |
 
 ```bash
-python -m csmon focus add "AK-47 | Redline" --intent buy \
+python -m facet focus add "AK-47 | Redline" --intent buy \
         --target 95 --budget 400 --wears FT,MW --priority 1 --note "等回调"
-python -m csmon focus ls
-python -m csmon focus detail "AK-47 | Redline (Field-Tested)"
+python -m facet focus ls
+python -m facet focus detail "AK-47 | Redline (Field-Tested)"
 ```
 
 状态判定的语义（买入方向）：
@@ -254,7 +254,7 @@ python -m csmon focus detail "AK-47 | Redline (Field-Tested)"
 
 ## 六、给 LLM 的上下文里包含什么
 
-`csmon advice ask` 会把下面这些结构化数据送给模型：
+`facet advice ask` 会把下面这些结构化数据送给模型：
 
 - 饰品的完整解析（武器/皮肤/磨损/品质/星标/是否变体敏感品类）
 - 当前各平台在售价、在售量、求购价

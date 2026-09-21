@@ -2,7 +2,7 @@
 
 BUFF 的 goods_id 是跨游戏共享的（Dota2/CS2/Rust...）。CS2 适配器要建
 market_hash_name -> goods_id 索引，先要知道该扫哪一段。本脚本用二分+抽样
-估计 CS2 区段，输出可直接喂给 csmon.indexer 的区间配置。
+估计 CS2 区段，输出可直接喂给 facet.indexer 的区间配置。
 """
 from __future__ import annotations
 

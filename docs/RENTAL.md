@@ -4,9 +4,9 @@ CS 饰品除了低买高卖，还有第二条收益路径：**出租收租**。�
 手续费、流动性合成一个可比较的结论。
 
 ```bash
-python -m csmon rent scan            # 采集关注清单里所有饰品的租赁数据
-python -m csmon rent show "★ M9 Bayonet | Doppler (Factory New)"
-python -m csmon rent rank            # 按年化收益排行
+python -m facet rent scan            # 采集关注清单里所有饰品的租赁数据
+python -m facet rent show "★ M9 Bayonet | Doppler (Factory New)"
+python -m facet rent rank            # 按年化收益排行
 ```
 
 ---
@@ -144,7 +144,7 @@ M9 刺刀多普勒（真实数据）
 默认值只是常见档位，请按自己的会员等级覆盖：
 
 ```python
-from csmon import rental
+from facet import rental
 
 result = rental.analyze(
     snapshot, horizon_days=90, mode=rental.MODE_LONG,

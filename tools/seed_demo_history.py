@@ -16,8 +16,8 @@ ROOT = Path(__file__).resolve().parent.parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from csmon.models import PLATFORM_BUFF, PLATFORM_YOUPIN, SourceQuote, iso, utcnow  # noqa: E402
-from csmon.store import Store  # noqa: E402
+from facet.models import PLATFORM_BUFF, PLATFORM_YOUPIN, SourceQuote, iso, utcnow  # noqa: E402
+from facet.store import Store  # noqa: E402
 
 # 有确定性趋势 + 随机波动的合成价格，便于肉眼判断指标是否正确
 SERIES = [
@@ -85,7 +85,7 @@ def main() -> int:
                 print(f"  {name[:44]:<44} {platform:<7} {len(quotes)} 条")
 
         # 回填日线缓存
-        from csmon.analytics import backfill_ohlc
+        from facet.analytics import backfill_ohlc
         result = backfill_ohlc(store, days=args.days + 5)
         print(f"\n共写入 {total} 条报价，日线缓存 {result['bars']} 根"
               f"（{result['pairs']} 个组合）")

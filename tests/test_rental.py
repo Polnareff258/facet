@@ -7,8 +7,8 @@ from __future__ import annotations
 
 import pytest
 
-from csmon import rental as R
-from csmon.rental import (
+from facet import rental as R
+from facet.rental import (
     MODE_LONG,
     MODE_SHORT,
     VERDICT_GOOD,
@@ -16,7 +16,7 @@ from csmon.rental import (
     VERDICT_POOR,
     VERDICT_UNKNOWN,
 )
-from csmon.store import Store
+from facet.store import Store
 
 # ── 真实样本（CSQAQ docs /api-187131780 的返回示例，节选关键字段）──
 M9_DOPPLER = {
@@ -408,7 +408,7 @@ def test_store_stats_includes_rent(store: Store) -> None:
 
 def test_snapshot_from_row_keeps_market_price(store: Store) -> None:
     """存库再读回时，收益率分母的口径必须与采集时一致。"""
-    from csmon.cli import _snapshot_from_row
+    from facet.cli import _snapshot_from_row
 
     snap = _snapshot()
     store.insert_rent_snapshot(snap)

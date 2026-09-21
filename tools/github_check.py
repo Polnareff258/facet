@@ -10,12 +10,12 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-REPO = "Polnareff258/youyoumonitor"
+REPO = "Polnareff258/facet"
 
 #: 这些文件**绝对不该**出现在公开仓库里
 FORBIDDEN = [
     ".env", "config.local.yaml", "patterns.yaml",
-    "data/csmon.db", ".venv", "refs",
+    "data/facet.db", ".venv", "refs",
 ]
 
 TOPICS = ["cs2", "counter-strike", "price-monitor", "buff", "youpin",

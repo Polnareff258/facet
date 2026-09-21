@@ -146,7 +146,7 @@ class ExtremeTracker:
             logger.info("[extreme] 没有启用的追踪任务")
             return
         self._stop.clear()
-        self._thread = threading.Thread(target=self._loop, name="csmon-extreme",
+        self._thread = threading.Thread(target=self._loop, name="facet-extreme",
                                         daemon=True)
         self._thread.start()
         logger.info("[extreme] 已启动 %d 个追踪任务", count)

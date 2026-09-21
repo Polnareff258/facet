@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from csmon.advice import (
+from facet.advice import (
     ACTION_CN,
     build_context,
     advice_is_stale,
@@ -14,7 +14,7 @@ from csmon.advice import (
     request_advice,
     _digest,
 )
-from csmon.llm import (
+from facet.llm import (
     LLMClient,
     LLMConfig,
     LLMError,
@@ -23,16 +23,16 @@ from csmon.llm import (
     PROVIDER_OPENAI,
     extract_json,
 )
-from csmon.models import SourceQuote, utcnow
-from csmon.store import Store
+from facet.models import SourceQuote, utcnow
+from facet.store import Store
 
 
 # ── 配置 ───────────────────────────────────────────────────
 
 def test_config_from_env_local_endpoint_needs_no_key(monkeypatch) -> None:
     """本机端点（Ollama）不该因为没密钥被判定为未配置。"""
-    monkeypatch.setenv("CSMON_LLM_PRESET", "ollama")
-    for key in ("CSMON_LLM_API_KEY", "DEEPSEEK_API_KEY", "OPENAI_API_KEY"):
+    monkeypatch.setenv("FACET_LLM_PRESET", "ollama")
+    for key in ("FACET_LLM_API_KEY", "DEEPSEEK_API_KEY", "OPENAI_API_KEY"):
         monkeypatch.delenv(key, raising=False)
     cfg = LLMConfig.from_env()
     assert cfg.provider == PROVIDER_OLLAMA
@@ -41,8 +41,8 @@ def test_config_from_env_local_endpoint_needs_no_key(monkeypatch) -> None:
 
 
 def test_config_cloud_requires_key(monkeypatch) -> None:
-    monkeypatch.setenv("CSMON_LLM_PRESET", "deepseek")
-    for key in ("CSMON_LLM_API_KEY", "DEEPSEEK_API_KEY", "OPENAI_API_KEY"):
+    monkeypatch.setenv("FACET_LLM_PRESET", "deepseek")
+    for key in ("FACET_LLM_API_KEY", "DEEPSEEK_API_KEY", "OPENAI_API_KEY"):
         monkeypatch.delenv(key, raising=False)
     cfg = LLMConfig.from_env()
     assert cfg.is_configured() is False
@@ -225,7 +225,7 @@ def _seed(store: Store, name: str = "AK-47 | Redline (Field-Tested)") -> None:
                     raw={"name": "AK-47 | 红线 (久经沙场)"})
         for i in range(30)
     ])
-    store.upsert_item(__import__("csmon.models", fromlist=["ItemRef"]).ItemRef(
+    store.upsert_item(__import__("facet.models", fromlist=["ItemRef"]).ItemRef(
         market_hash_name=name, buff_goods_id=1))
 
 
@@ -242,7 +242,7 @@ def test_build_context_has_required_sections(store: Store) -> None:
 
 
 def test_build_context_includes_focus_intent(store: Store) -> None:
-    from csmon.focus import add_focus
+    from facet.focus import add_focus
 
     _seed(store)
     add_focus(store, "AK-47 | Redline (Field-Tested)", intent="buy", target_price=95.0)
@@ -262,7 +262,7 @@ def test_context_digest_changes_when_price_changes(store: Store) -> None:
 
 
 def test_render_user_prompt_reflects_intent(store: Store) -> None:
-    from csmon.focus import add_focus
+    from facet.focus import add_focus
 
     _seed(store)
     add_focus(store, "AK-47 | Redline (Field-Tested)", intent="sell")
@@ -372,7 +372,7 @@ def test_request_advice_does_not_persist_when_asked(store: Store) -> None:
 
 def test_advice_cli_help_present() -> None:
     """advice 命令必须可达（命令行是主要使用方式）。"""
-    from csmon.cli import build_parser
+    from facet.cli import build_parser
 
     parser = build_parser()
     args = parser.parse_args(["advice", "config"])

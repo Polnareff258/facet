@@ -9,10 +9,10 @@ import json
 
 import pytest
 
-from csmon import focus as focus_mod
-from csmon.names import NameResolver, split_cn_base
-from csmon.patterns import PatternTable, SeedRule, SkinRuleSet, NameRule
-from csmon.skins import (
+from facet import focus as focus_mod
+from facet.names import NameResolver, split_cn_base
+from facet.patterns import PatternTable, SeedRule, SkinRuleSet, NameRule
+from facet.skins import (
     Quality,
     WEAR_EN_TO_CN,
     compose_cn,
@@ -20,7 +20,7 @@ from csmon.skins import (
     group_variants,
     parse_name,
 )
-from csmon.store import Store
+from facet.store import Store
 
 
 # ── 名称解析 ───────────────────────────────────────────────
@@ -304,7 +304,7 @@ def test_wear_filter_parsing() -> None:
 
 
 def test_quality_filter_parsing() -> None:
-    from csmon.skins import Quality
+    from facet.skins import Quality
 
     assert focus_mod.resolve_quality_filter("暗金") == [Quality.STATTRAK]
     assert focus_mod.resolve_quality_filter("普通,纪念品") == [
@@ -314,7 +314,7 @@ def test_quality_filter_parsing() -> None:
 def test_status_buy_ready_and_waiting(store: Store) -> None:
     focus_mod.add_focus(store, "X | Y (Field-Tested)", intent="buy", target_price=100.0)
 
-    from csmon.models import SourceQuote
+    from facet.models import SourceQuote
 
     # 现价 95 ≤ 目标 100 → 达到买点
     store.insert_quotes([SourceQuote(market_hash_name="X | Y (Field-Tested)",
@@ -332,7 +332,7 @@ def test_status_buy_ready_and_waiting(store: Store) -> None:
 
 def test_status_sell_ready(store: Store) -> None:
     focus_mod.add_focus(store, "X | Y (Field-Tested)", intent="sell", target_price=200.0)
-    from csmon.models import SourceQuote
+    from facet.models import SourceQuote
 
     store.insert_quotes([SourceQuote(market_hash_name="X | Y (Field-Tested)",
                                      platform="BUFF", source="t",

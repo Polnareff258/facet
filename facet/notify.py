@@ -27,7 +27,7 @@ class Notifier:
     def __init__(self, config: NotifyConfig) -> None:
         self.config = config
         self._session = requests.Session()
-        self._session.headers.update({"User-Agent": "youyoumonitor/0.1"})
+        self._session.headers.update({"User-Agent": "facet/0.1"})
 
     # ── 对外入口 ───────────────────────────────────────────
 

@@ -44,7 +44,7 @@ class WatchPayload(BaseModel):
 def create_app(config: Config, store: Store | None = None,
                monitor: Monitor | None = None) -> FastAPI:
     """构造 FastAPI 应用。store/monitor 可注入，便于测试。"""
-    app = FastAPI(title="youyoumonitor", version="0.1.0",
+    app = FastAPI(title="facet", version="0.1.0",
                   description="CS 饰品多源行情监控（BUFF / 悠悠有品）")
     db = store or Store(config.database)
     mon = monitor or Monitor(config, db)

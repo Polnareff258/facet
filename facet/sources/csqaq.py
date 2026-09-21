@@ -54,7 +54,7 @@ class CsqaqAdapter(SourceAdapter):
         self._session.headers.update({
             "Content-Type": "application/json",
             "Accept": "application/json",
-            "User-Agent": "youyoumonitor/0.1 (+local monitor)",
+            "User-Agent": "facet/0.1 (+local monitor)",
         })
 
     def preflight(self) -> None:
@@ -183,7 +183,7 @@ class CsqaqAdapter(SourceAdapter):
           · 存世量：`statistic`
           · 相位映射：`dpl[]` 直接给出 label ↔ paint_index ↔ 各相位价格
 
-        只读，不写库。解析交给 csmon.rental。
+        只读，不写库。解析交给 facet.rental。
         """
         gate = self.gates.gate(self.name, "good_detail", self.config.min_interval)
         try:

@@ -67,7 +67,7 @@ class LLMConfig:
     base_url: str = ""
     model: str = ""
     api_key: str = ""
-    api_key_env: str = "CSMON_LLM_API_KEY"
+    api_key_env: str = "FACET_LLM_API_KEY"
     timeout: float = 90.0
     max_tokens: int = 2000
     temperature: float = 0.2
@@ -133,7 +133,7 @@ class LLMConfig:
     @classmethod
     def _from(cls, settings: Any = None) -> LLMConfig:
         # ── 密钥（只来自环境变量）──
-        key_env = "CSMON_LLM_API_KEY"
+        key_env = "FACET_LLM_API_KEY"
         api_key = os.environ.get(key_env, "").strip()
         if not api_key:
             # 兼容各家约定的变量名，降低接入摩擦
@@ -150,10 +150,10 @@ class LLMConfig:
             return ((os.environ.get(env_name) or "").strip()
                     or (getattr(settings, attr, "") or "").strip())
 
-        preset = pick("CSMON_LLM_PRESET", "preset").lower()
-        provider = pick("CSMON_LLM_PROVIDER", "provider").lower()
-        base_url = pick("CSMON_LLM_BASE_URL", "base_url")
-        model = pick("CSMON_LLM_MODEL", "model")
+        preset = pick("FACET_LLM_PRESET", "preset").lower()
+        provider = pick("FACET_LLM_PROVIDER", "provider").lower()
+        base_url = pick("FACET_LLM_BASE_URL", "base_url")
+        model = pick("FACET_LLM_MODEL", "model")
 
         if not provider:
             if preset == PROVIDER_OLLAMA:
@@ -163,7 +163,7 @@ class LLMConfig:
             else:
                 provider = PROVIDER_OPENAI
 
-        enabled_raw = (os.environ.get("CSMON_LLM_ENABLED") or "").strip().lower()
+        enabled_raw = (os.environ.get("FACET_LLM_ENABLED") or "").strip().lower()
         if enabled_raw:
             enabled = enabled_raw not in ("0", "false", "no", "off")
         else:
@@ -194,9 +194,9 @@ class LLMConfig:
             model=model,
             api_key=api_key,
             api_key_env=key_env,
-            timeout=pick_float("CSMON_LLM_TIMEOUT", "timeout", 90.0),
-            max_tokens=pick_int("CSMON_LLM_MAX_TOKENS", "max_tokens", 2000),
-            temperature=pick_float("CSMON_LLM_TEMPERATURE", "temperature", 0.2),
+            timeout=pick_float("FACET_LLM_TIMEOUT", "timeout", 90.0),
+            max_tokens=pick_int("FACET_LLM_MAX_TOKENS", "max_tokens", 2000),
+            temperature=pick_float("FACET_LLM_TEMPERATURE", "temperature", 0.2),
             enabled=enabled,
         )
 
@@ -216,7 +216,7 @@ class LLMClient:
         if not self.config.is_configured():
             raise LLMError(
                 f"LLM 未配置：请设置 {self.config.api_key_env}"
-                "（本机端点如 Ollama 则设置 CSMON_LLM_PRESET=ollama）")
+                "（本机端点如 Ollama 则设置 FACET_LLM_PRESET=ollama）")
 
         last_error: Exception | None = None
         for attempt in range(1, self.config.max_retries + 2):

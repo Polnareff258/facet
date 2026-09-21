@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""youyoumonitor 一键启动器（Windows / Linux / 树莓派 / macOS 通用）。
+"""facet 一键启动器（Windows / Linux / 树莓派 / macOS 通用）。
 
 设计目标：把「从零到跑起来」压成一条命令，且可重复执行不出错。
 
@@ -33,7 +33,7 @@ if str(ROOT) not in sys.path:
 
 # 控制台适配必须在任何输出之前：Windows 中文版控制台默认是 GBK，
 # 直接 print("✓") 会抛 UnicodeEncodeError 让启动器崩在第一步。
-from csmon.console import safe_print, setup_console, sym  # noqa: E402
+from facet.console import safe_print, setup_console, sym  # noqa: E402
 
 CONSOLE = setup_console()
 
@@ -42,8 +42,8 @@ RECOMMENDED_PYTHON = (3, 11)
 
 RUN_DIR = ROOT / "run"
 LOG_DIR = ROOT / "logs"
-PID_FILE = RUN_DIR / "csmon.pid"
-LOG_FILE = LOG_DIR / "csmon.log"
+PID_FILE = RUN_DIR / "facet.pid"
+LOG_FILE = LOG_DIR / "facet.log"
 
 C_RESET = "\033[0m"
 C_BOLD = "\033[1m"
@@ -74,11 +74,11 @@ def c(text: str, color: str = "") -> str:
 
 
 def banner() -> None:
-    from csmon.platform import summary_line
+    from facet.platform import summary_line
 
     sym_ = lambda n, fallback=" ": sym(n) or fallback
     print()
-    safe_print(c("  youyoumonitor", C_BOLD + C_CYAN)
+    safe_print(c("  facet", C_BOLD + C_CYAN)
                + c("  ·  CS 饰品多源行情监控（BUFF / 悠悠有品）", C_DIM))
     safe_print(c(f"  {summary_line()}", C_DIM))
     safe_print(c("  " + sym_("line", "-") * 62, C_DIM))
@@ -107,7 +107,7 @@ def ok(text: str) -> None:
 # ── 虚拟环境自举 ───────────────────────────────────────────
 
 def venv_python() -> Path:
-    from csmon.platform import venv_paths
+    from facet.platform import venv_paths
 
     return venv_paths(ROOT)["python"]
 
@@ -121,7 +121,7 @@ def running_in_target_venv() -> bool:
 
 def ensure_venv(skip: bool) -> Path:
     """确保 .venv 存在；返回其中的 python 路径（或当前解释器）。"""
-    from csmon.platform import find_system_python
+    from facet.platform import find_system_python
 
     if skip:
         return Path(sys.executable)
@@ -155,7 +155,7 @@ def ensure_venv(skip: bool) -> Path:
 
 def install_deps(python: Path, force: bool = False) -> None:
     """安装依赖。已装齐则跳过（除非 force）。"""
-    from csmon.platform import pip_index_args
+    from facet.platform import pip_index_args
 
     if not force and _deps_ready(python):
         ok("依赖已就绪（跳过安装）")
@@ -180,7 +180,7 @@ def install_deps(python: Path, force: bool = False) -> None:
             info(line)
         info("")
         info("常见原因与处理：")
-        info("  · 网络问题 → 换镜像：CSMON_PIP_INDEX=https://pypi.tuna.tsinghua.edu.cn/simple")
+        info("  · 网络问题 → 换镜像：FACET_PIP_INDEX=https://pypi.tuna.tsinghua.edu.cn/simple")
         info("  · 32 位 ARM 编译失败 → 换 64 位系统，或 sed -i 改用 piwheels")
         info("  · 缺编译工具 → sudo apt install -y build-essential python3-dev")
         raise SystemExit(3)
@@ -216,7 +216,7 @@ def reexec_in_venv(args: list[str]) -> None:
 # ── 自检 ───────────────────────────────────────────────────
 
 def run_doctor(config, network: bool) -> bool:
-    from csmon.doctor import format_report, run_checks
+    from facet.doctor import format_report, run_checks
 
     step("运行环境自检")
     report = run_checks(config, network=network)
@@ -334,7 +334,7 @@ def daemonize(argv: list[str]) -> int:
 def parse_args(argv: list[str]) -> argparse.Namespace:
     p = argparse.ArgumentParser(
         prog="bootstrap.py",
-        description="youyoumonitor 一键启动器",
+        description="facet 一键启动器",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=__doc__,
     )
@@ -391,8 +391,8 @@ def main(argv: list[str] | None = None) -> int:
         install_deps(Path(sys.executable), force=args.reinstall)
 
     # 3) 配置与平台调优
-    from csmon.config import load_config
-    from csmon.platform import detect
+    from facet.config import load_config
+    from facet.platform import detect
 
     profile = detect()
     config = load_config(args.config)
@@ -407,13 +407,13 @@ def main(argv: list[str] | None = None) -> int:
 
     # 4) 自检
     if args.check or args.doctor_json:
-        from csmon.doctor import run_checks
+        from facet.doctor import run_checks
         report = run_checks(config, network=not args.no_network, profile=profile)
         if args.doctor_json:
             import json
             print(json.dumps(report.to_dict(), ensure_ascii=False, indent=2))
         else:
-            from csmon.doctor import format_report
+            from facet.doctor import format_report
             print(format_report(report))
         return 0 if report.ok else 1
 
@@ -441,7 +441,7 @@ def main(argv: list[str] | None = None) -> int:
 
 
 def _run_once(config) -> int:
-    from csmon.scheduler import Monitor
+    from facet.scheduler import Monitor
 
     step("执行一轮采集")
     with Monitor(config) as monitor:
@@ -467,7 +467,7 @@ def _run_once(config) -> int:
 
 
 def _build_monitor(config):
-    from csmon.scheduler import Monitor
+    from facet.scheduler import Monitor
 
     monitor = Monitor(config)
     monitor.seed_watchlist()
@@ -489,7 +489,7 @@ def _collect_only(config) -> int:
 
 
 def _serve_only(config) -> int:
-    from csmon.web import create_app
+    from facet.web import create_app
     import uvicorn
 
     app = create_app(config)
@@ -507,7 +507,7 @@ def _run_all(config, with_web: bool = True) -> int:
     stop_event = threading.Event()
 
     if with_web:
-        from csmon.web import create_app
+        from facet.web import create_app
         import uvicorn
 
         app = create_app(config, monitor.store, monitor)
@@ -521,7 +521,7 @@ def _run_all(config, with_web: bool = True) -> int:
             except Exception as exc:  # noqa: BLE001
                 warn(f"看板异常退出：{exc}")
 
-        threading.Thread(target=serve, name="csmon-web", daemon=True).start()
+        threading.Thread(target=serve, name="facet-web", daemon=True).start()
         ok(f"看板地址：http://{config.web.host}:{config.web.port}")
 
     ok(f"采集间隔：{config.poll_interval}s")

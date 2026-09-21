@@ -20,7 +20,7 @@ LOCAL = {
 }
 
 session = requests.Session()
-session.headers.update({"User-Agent": "youyoumonitor-license-check",
+session.headers.update({"User-Agent": "facet-license-check",
                         "Accept": "application/vnd.github+json"})
 
 for repo in REPOS:

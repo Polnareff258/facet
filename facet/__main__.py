@@ -1,4 +1,4 @@
-"""python -m csmon 入口。"""
+"""python -m facet 入口。"""
 
 from .cli import main
 

@@ -14,7 +14,7 @@ DASHBOARD_HTML = r"""<!doctype html>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>youyoumonitor · CS 饰品行情看板</title>
+<title>facet · CS 饰品行情看板</title>
 <style>
   :root{--bg:#0d1117;--panel:#161b22;--line:#232a33;--fg:#e6edf3;--dim:#8b949e;
         --up:#f85149;--down:#3fb950;--accent:#58a6ff;--warn:#e3b341;}
@@ -80,7 +80,7 @@ DASHBOARD_HTML = r"""<!doctype html>
 <body>
 <header>
   <div class="top">
-    <h1>youyoumonitor</h1>
+    <h1>facet</h1>
     <span class="sub" id="meta">加载中…</span>
     <span style="flex:1"></span>
     <button class="act" onclick="refreshAll()">刷新</button>
@@ -434,7 +434,7 @@ function renderFocus(d){
     .filter(g => g[1].length);
   if(!groups.length){
     el.innerHTML = '<div class="empty">关注清单为空。用命令行添加，例如：<br>' +
-      '<code>python -m csmon focus add "AK-47 | Redline" --intent buy --target 95 --wears FT,MW</code></div>';
+      '<code>python -m facet focus add "AK-47 | Redline" --intent buy --target 95 --wears FT,MW</code></div>';
     return;
   }
   el.innerHTML = groups.map(([title, rows]) => `
@@ -506,7 +506,7 @@ async function loadRent(){
     const el = document.getElementById("rent");
     if(!d.items.length){
       el.innerHTML = '<div class="empty">还没有租赁数据。<br>' +
-        '采集：<code>python -m csmon rent scan</code>（需 CSQAQ Token）</div>';
+        '采集：<code>python -m facet rent scan</code>（需 CSQAQ Token）</div>';
       return;
     }
     el.innerHTML = `<table><tr><th>年化</th><th>风险调整</th><th>模式</th>
@@ -600,12 +600,12 @@ async function loadAdvice(){
     const llm = d.llm || {};
     document.getElementById("llmStatus").innerHTML = llm.configured
       ? `模型：${esc(llm.model)}（${esc(llm.provider)}）`
-      : `<span class="neg">LLM 未配置</span> —— 在 .env 里设置 CSMON_LLM_PRESET 与 CSMON_LLM_API_KEY，然后 <code>python -m csmon advice probe</code>`;
+      : `<span class="neg">LLM 未配置</span> —— 在 .env 里设置 FACET_LLM_PRESET 与 FACET_LLM_API_KEY，然后 <code>python -m facet advice probe</code>`;
 
     const el = document.getElementById("advice");
     if(!d.items.length){
       el.innerHTML = '<div class="empty">还没有生成建议。<br>' +
-        '先在关注清单里加标的，然后运行 <code>python -m csmon advice ask</code></div>';
+        '先在关注清单里加标的，然后运行 <code>python -m facet advice ask</code></div>';
       return;
     }
     el.innerHTML = `<table><tr><th>时间</th><th>饰品</th><th>动作</th><th>把握</th>
@@ -690,7 +690,7 @@ function renderSources(rows){
 
 function renderExtreme(d){
   if(!d.task_count){
-    $("extreme").innerHTML = '<div class="empty">没有追踪任务。<br>用 <code>python -m csmon extreme add "饰品名" --interval 30</code> 添加</div>';
+    $("extreme").innerHTML = '<div class="empty">没有追踪任务。<br>用 <code>python -m facet extreme add "饰品名" --interval 30</code> 添加</div>';
     return;
   }
   const s = d.stats || {};

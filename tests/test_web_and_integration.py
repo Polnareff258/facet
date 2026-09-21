@@ -5,11 +5,11 @@ from pathlib import Path
 
 import pytest
 
-from csmon.config import Config, NotifyConfig, SourceConfig, WebConfig
-from csmon.mapping import MappingService
-from csmon.models import ItemRef, WatchRule
-from csmon.scheduler import Monitor
-from csmon.store import Store
+from facet.config import Config, NotifyConfig, SourceConfig, WebConfig
+from facet.mapping import MappingService
+from facet.models import ItemRef, WatchRule
+from facet.scheduler import Monitor
+from facet.store import Store
 
 fastapi_testclient = pytest.importorskip("fastapi.testclient")
 
@@ -32,7 +32,7 @@ def _config(tmp_path: Path, **kw) -> Config:
 
 @pytest.fixture()
 def client(tmp_path: Path):
-    from csmon.web import create_app
+    from facet.web import create_app
     cfg = _config(tmp_path)
     app = create_app(cfg, store=Store(cfg.database))
     with fastapi_testclient.TestClient(app) as c:
@@ -99,7 +99,7 @@ def test_dashboard_page_served(client) -> None:
     c, _ = client
     resp = c.get("/")
     assert resp.status_code == 200
-    assert "youyoumonitor" in resp.text
+    assert "facet" in resp.text
     # 新看板是多标签页 + 原生 Canvas K 线（无 CDN 依赖）
     assert "跨平台价差雷达" in resp.text
     assert "canvas" in resp.text
@@ -293,8 +293,8 @@ def test_to_item_refs_returns_placeholder_for_unknown(tmp_path: Path) -> None:
 
 
 def test_notify_dry_run_does_not_send(tmp_path: Path) -> None:
-    from csmon.models import AlertEvent
-    from csmon.notify import Notifier
+    from facet.models import AlertEvent
+    from facet.notify import Notifier
 
     cfg = _config(tmp_path)
     cfg.notify = NotifyConfig(enabled=True, dry_run=True, channels=[
@@ -311,7 +311,7 @@ def test_notify_dry_run_does_not_send(tmp_path: Path) -> None:
 def test_quiet_hours_logic() -> None:
     from datetime import datetime
 
-    from csmon.notify import Notifier
+    from facet.notify import Notifier
 
     notifier = Notifier(NotifyConfig(enabled=True, dry_run=True, quiet_hours=(23, 8)))
     try:
@@ -326,8 +326,8 @@ def test_quiet_hours_logic() -> None:
 
 
 def test_notify_disabled_skips_send() -> None:
-    from csmon.models import AlertEvent
-    from csmon.notify import Notifier
+    from facet.models import AlertEvent
+    from facet.notify import Notifier
 
     notifier = Notifier(NotifyConfig(enabled=False))
     try:

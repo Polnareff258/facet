@@ -14,7 +14,7 @@ P1-P4）分成 6 档，价差可以是 3-10 倍。把「同一种饰品」当一
   └─ 星标（匕首、手套）
 
 **名称解析不出来的部分**（多普勒相位、渐变百分比、淬火蓝钢档、特殊模板）由
-`csmon/patterns.py` 处理 —— 那些取决于饰品实例的 `paint_seed`，不取决于名称。
+`facet/patterns.py` 处理 —— 那些取决于饰品实例的 `paint_seed`，不取决于名称。
 这条边界必须划清楚：靠名称猜相位会给出错误的交易建议。
 """
 from __future__ import annotations
@@ -397,7 +397,7 @@ def compose_cn(variant: SkinVariant,
                finish_cn: str | None = None) -> str:
     """在没有权威中文名时，按结构拼一个中文显示名。
 
-    这是**兜底**路径。优先用从 BUFF / CSQAQ 学到的官方中文名（见 csmon/names.py），
+    这是**兜底**路径。优先用从 BUFF / CSQAQ 学到的官方中文名（见 facet/names.py），
     因为中文的语序和括号风格与英文不同（例如 BUFF 把 ★ 写在刀名后：
     「M9 刺刀（★） | 澄澈之水 (破损不堪)」），拼接结果只能算可读，谈不上地道。
     """

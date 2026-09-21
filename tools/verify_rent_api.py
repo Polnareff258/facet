@@ -10,8 +10,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from csmon.config import load_config   # noqa: E402
-from csmon.web import create_app       # noqa: E402
+from facet.config import load_config   # noqa: E402
+from facet.web import create_app       # noqa: E402
 
 
 def main() -> int:

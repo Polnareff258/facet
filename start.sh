@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# youyoumonitor 一键启动（Linux / Raspberry Pi / macOS）
+# facet 一键启动（Linux / Raspberry Pi / macOS）
 #
 #   ./start.sh                  # 建环境 → 装依赖 → 自检 → 启动采集+看板
 #   ./start.sh --setup          # 只准备环境
@@ -64,7 +64,7 @@ fi
 if [ -r /proc/device-tree/model ] && grep -qi "raspberry pi" /proc/device-tree/model 2>/dev/null; then
   MODEL="$(tr -d '\0' < /proc/device-tree/model 2>/dev/null || echo 'Raspberry Pi')"
   say "${DIM}  检测到：${MODEL}${RESET}"
-  if [ -z "${CSMON_PI_HINT_SHOWN:-}" ]; then
+  if [ -z "${FACET_PI_HINT_SHOWN:-}" ]; then
     ARCH="$(uname -m)"
     case "$ARCH" in
       armv7l|armv6l)

@@ -106,7 +106,7 @@ def update_env(path: Path, updates: dict[str, str]) -> list[str]:
     if remaining:
         if lines and lines[-1].strip():
             lines.append("")
-        lines.append("# --- 由 csmon setup 写入 ---")
+        lines.append("# --- 由 facet setup 写入 ---")
         for key, value in remaining.items():
             lines.append(f"{key}={value}")
             changed.append(key)
@@ -153,7 +153,7 @@ PRESET_KEY_ENV: dict[str, str] = {
     "zhipu": "ZHIPUAI_API_KEY",
     "siliconflow": "SILICONFLOW_API_KEY",
     "openai": "OPENAI_API_KEY",
-    "anthropic": "CSMON_LLM_API_KEY",
+    "anthropic": "FACET_LLM_API_KEY",
 }
 
 PRESET_SIGNUP: dict[str, str] = {
@@ -180,7 +180,7 @@ def llm_wizard(config: Config, interactive: bool | None = None,
             "hint": ("非交互环境。请手动设定：\n"
                      "  在 config.local.yaml 写：llm: {preset: deepseek}\n"
                      "  在 .env 写：DEEPSEEK_API_KEY=sk-xxx\n"
-                     "  预设列表见 python -m csmon advice presets"),
+                     "  预设列表见 python -m facet advice presets"),
         }
 
     # 1) 选预设
@@ -200,8 +200,8 @@ def llm_wizard(config: Config, interactive: bool | None = None,
     # 2) 取密钥（本机模型跳过）
     key_value = api_key or ""
     if not is_local:
-        key_env_name = PRESET_KEY_ENV.get(chosen, "CSMON_LLM_API_KEY")
-        existing = os.environ.get(key_env_name) or os.environ.get("CSMON_LLM_API_KEY")
+        key_env_name = PRESET_KEY_ENV.get(chosen, "FACET_LLM_API_KEY")
+        existing = os.environ.get(key_env_name) or os.environ.get("FACET_LLM_API_KEY")
         if existing:
             print(f"\n  检测到已配置的密钥（{key_env_name} = {mask(existing)}）")
             if use_tty and not _confirm("要替换吗？", default=False):
@@ -225,7 +225,7 @@ def llm_wizard(config: Config, interactive: bool | None = None,
     print(f"\n  已写入本地配置：{local_file}")
 
     if key_value and not is_local:
-        key_env_name = PRESET_KEY_ENV.get(chosen, "CSMON_LLM_API_KEY")
+        key_env_name = PRESET_KEY_ENV.get(chosen, "FACET_LLM_API_KEY")
         env_path = env_file_path(config.config_path)
         changed = update_env(env_path, {key_env_name: key_value})
         os.environ[key_env_name] = key_value        # 让本次校验立刻生效
@@ -281,7 +281,7 @@ def buff_wizard(config: Config, interactive: bool | None = None,
     value = cookie or ""
     if not value and use_tty:
         if not _confirm("现在就配置 Cookie 吗？", default=False):
-            print("  跳过。之后可随时执行 python -m csmon setup buff")
+            print("  跳过。之后可随时执行 python -m facet setup buff")
             return result
         value = _ask("粘贴 Cookie（回车跳过）", "")
     if not value:
@@ -418,7 +418,7 @@ def run_setup(config: Config, targets: list[str] | None = None,
 
     print("\n" + "=" * 62)
     print("  配置完成。接下来：")
-    print("    python -m csmon doctor          # 复查环境")
+    print("    python -m facet doctor          # 复查环境")
     print("    python bootstrap.py             # 启动")
     print("=" * 62)
     return results

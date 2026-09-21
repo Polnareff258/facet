@@ -4,12 +4,12 @@
 """
 from __future__ import annotations
 
-from csmon import variants as variants_mod
-from csmon.config import SourceConfig
-from csmon.models import ItemRef, SourceQuote
-from csmon.ratelimit import GateRegistry
-from csmon.sources.youpin_direct import YouPinDirectAdapter, _tier_label
-from csmon.store import Store
+from facet import variants as variants_mod
+from facet.config import SourceConfig
+from facet.models import ItemRef, SourceQuote
+from facet.ratelimit import GateRegistry
+from facet.sources.youpin_direct import YouPinDirectAdapter, _tier_label
+from facet.store import Store
 
 
 # 实测样本：字段名与取值都来自真实响应
@@ -135,7 +135,7 @@ def test_save_vocab_accumulates_samples(store: Store) -> None:
 
 def test_save_vocab_learns_chinese_name(store: Store) -> None:
     """词表里带官方中文名，顺便收录（这本来就是权威来源）。"""
-    from csmon.names import NameResolver
+    from facet.names import NameResolver
 
     variants_mod.save_vocab(store, variants_mod.extract_vocab(
         DOPPLER_ROWS, "★ Bayonet | Doppler (Factory New)"))

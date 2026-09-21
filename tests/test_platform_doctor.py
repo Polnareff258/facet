@@ -10,9 +10,9 @@ from pathlib import Path
 
 import pytest
 
-from csmon.config import Config, NotifyConfig, SourceConfig, WebConfig, load_config, load_dotenv
-from csmon.platform import detect, pip_index_args, venv_paths
-from csmon.store import Store
+from facet.config import Config, NotifyConfig, SourceConfig, WebConfig, load_config, load_dotenv
+from facet.platform import detect, pip_index_args, venv_paths
+from facet.store import Store
 
 
 # ── 平台探测 ───────────────────────────────────────────────
@@ -65,36 +65,36 @@ def test_load_dotenv_parses_common_forms(tmp_path: Path, monkeypatch) -> None:
     env_file.write_text(
         "# 注释行\n"
         "\n"
-        "CSMON_TEST_A=plain\n"
-        "CSMON_TEST_B='quoted value'\n"
-        'CSMON_TEST_C="double quoted"\n'
-        "CSMON_TEST_D=value # 行内注释\n"
-        "export CSMON_TEST_E=exported\n"
-        "CSMON_TEST_EMPTY=\n"
+        "FACET_TEST_A=plain\n"
+        "FACET_TEST_B='quoted value'\n"
+        'FACET_TEST_C="double quoted"\n'
+        "FACET_TEST_D=value # 行内注释\n"
+        "export FACET_TEST_E=exported\n"
+        "FACET_TEST_EMPTY=\n"
         "没等号的行\n",
         encoding="utf-8",
     )
     for key in list(os.environ):
-        if key.startswith("CSMON_TEST_"):
+        if key.startswith("FACET_TEST_"):
             monkeypatch.delenv(key, raising=False)
 
     loaded = load_dotenv(env_file)
     assert loaded >= 6
-    assert os.environ["CSMON_TEST_A"] == "plain"
-    assert os.environ["CSMON_TEST_B"] == "quoted value"
-    assert os.environ["CSMON_TEST_C"] == "double quoted"
-    assert os.environ["CSMON_TEST_D"] == "value"
-    assert os.environ["CSMON_TEST_E"] == "exported"
-    assert os.environ["CSMON_TEST_EMPTY"] == ""
+    assert os.environ["FACET_TEST_A"] == "plain"
+    assert os.environ["FACET_TEST_B"] == "quoted value"
+    assert os.environ["FACET_TEST_C"] == "double quoted"
+    assert os.environ["FACET_TEST_D"] == "value"
+    assert os.environ["FACET_TEST_E"] == "exported"
+    assert os.environ["FACET_TEST_EMPTY"] == ""
 
 
 def test_load_dotenv_does_not_override_real_env(tmp_path: Path, monkeypatch) -> None:
     """真实环境变量优先于 .env —— 用户临时 export 应当能盖过文件。"""
-    monkeypatch.setenv("CSMON_TEST_KEEP", "from-env")
+    monkeypatch.setenv("FACET_TEST_KEEP", "from-env")
     env_file = tmp_path / ".env"
-    env_file.write_text("CSMON_TEST_KEEP=from-file\n", encoding="utf-8")
+    env_file.write_text("FACET_TEST_KEEP=from-file\n", encoding="utf-8")
     load_dotenv(env_file)
-    assert os.environ["CSMON_TEST_KEEP"] == "from-env"
+    assert os.environ["FACET_TEST_KEEP"] == "from-env"
 
 
 def test_load_dotenv_missing_file_is_noop(tmp_path: Path) -> None:
@@ -102,11 +102,11 @@ def test_load_dotenv_missing_file_is_noop(tmp_path: Path) -> None:
 
 
 def test_load_dotenv_override_flag(tmp_path: Path, monkeypatch) -> None:
-    monkeypatch.setenv("CSMON_TEST_OVR", "from-env")
+    monkeypatch.setenv("FACET_TEST_OVR", "from-env")
     env_file = tmp_path / ".env"
-    env_file.write_text("CSMON_TEST_OVR=from-file\n", encoding="utf-8")
+    env_file.write_text("FACET_TEST_OVR=from-file\n", encoding="utf-8")
     load_dotenv(env_file, override=True)
-    assert os.environ["CSMON_TEST_OVR"] == "from-file"
+    assert os.environ["FACET_TEST_OVR"] == "from-file"
 
 
 def test_env_credentials_flow_into_config(tmp_path: Path, monkeypatch) -> None:
@@ -118,7 +118,7 @@ def test_env_credentials_flow_into_config(tmp_path: Path, monkeypatch) -> None:
 # ── 自检 ───────────────────────────────────────────────────
 
 def test_doctor_report_structure(tmp_path: Path) -> None:
-    from csmon.doctor import run_checks
+    from facet.doctor import run_checks
 
     cfg = Config(database=str(tmp_path / "d.db"),
                  sources={"mock": SourceConfig(name="mock", enabled=True)},
@@ -134,7 +134,7 @@ def test_doctor_report_structure(tmp_path: Path) -> None:
 
 def test_doctor_flags_unwritable_database(tmp_path: Path) -> None:
     """:memory: 之类不可写路径应被判为阻断（fail），而不是悄悄降级。"""
-    from csmon.doctor import LEVEL_FAIL, run_checks
+    from facet.doctor import LEVEL_FAIL, run_checks
 
     cfg = Config(database=str(tmp_path / "sub" / "x.db"),
                  sources={"mock": SourceConfig(name="mock", enabled=True)})
@@ -144,7 +144,7 @@ def test_doctor_flags_unwritable_database(tmp_path: Path) -> None:
 
 def test_doctor_reports_missing_credential_as_warning(tmp_path: Path) -> None:
     """缺 CSQAQ Token 是警告而非阻断：免凭据源仍能工作。"""
-    from csmon.doctor import run_checks
+    from facet.doctor import run_checks
 
     cfg = Config(database=str(tmp_path / "d.db"),
                  sources={"csqaq": SourceConfig(name="csqaq", enabled=True,
@@ -158,7 +158,7 @@ def test_doctor_reports_missing_credential_as_warning(tmp_path: Path) -> None:
 def test_doctor_to_dict_serialisable(tmp_path: Path) -> None:
     import json
 
-    from csmon.doctor import run_checks
+    from facet.doctor import run_checks
 
     cfg = Config(database=str(tmp_path / "d.db"),
                  sources={"mock": SourceConfig(name="mock", enabled=True)})
@@ -172,7 +172,7 @@ def test_doctor_to_dict_serialisable(tmp_path: Path) -> None:
 def test_archive_moves_old_rows_to_daily(store: Store) -> None:
     from datetime import timedelta
 
-    from csmon.models import SourceQuote, utcnow
+    from facet.models import SourceQuote, utcnow
 
     now = utcnow()
     # 同一天内的三次采样，分钟递增：100 → 110 → 90
@@ -202,7 +202,7 @@ def test_archive_moves_old_rows_to_daily(store: Store) -> None:
 def test_archive_is_idempotent(store: Store) -> None:
     from datetime import timedelta
 
-    from csmon.models import SourceQuote, utcnow
+    from facet.models import SourceQuote, utcnow
 
     store.insert_quotes([SourceQuote(market_hash_name="X", platform="BUFF", source="s",
                                      sell_price=1.0,
@@ -217,7 +217,7 @@ def test_archive_is_idempotent(store: Store) -> None:
 # ── 存储：全文搜索 ─────────────────────────────────────────
 
 def test_fts_search_finds_by_prefix(store: Store) -> None:
-    from csmon.models import ItemRef
+    from facet.models import ItemRef
 
     store.upsert_items([
         ItemRef(market_hash_name="AK-47 | Redline (Field-Tested)", buff_goods_id=1),
@@ -229,7 +229,7 @@ def test_fts_search_finds_by_prefix(store: Store) -> None:
 
 def test_search_handles_special_characters(store: Store) -> None:
     """用户输入里的引号/星号不能把搜索搞崩 —— FTS5 会把这些当运算符。"""
-    from csmon.models import ItemRef
+    from facet.models import ItemRef
 
     store.upsert_item(ItemRef(market_hash_name='★ Karambit | "Fade" (FN)', buff_goods_id=3))
     for keyword in ['"', "*", "★", 'a"b', "((", "OR", "NOT"]:
@@ -243,7 +243,7 @@ def test_search_empty_keyword(store: Store) -> None:
 
 def test_search_like_fallback_still_works(tmp_path: Path) -> None:
     """即使 FTS 不可用，也要能按子串搜到（功能降级但不失效）。"""
-    from csmon.models import ItemRef
+    from facet.models import ItemRef
 
     db = Store(tmp_path / "nofs.db")
     try:
@@ -275,7 +275,7 @@ def test_extreme_watch_crud(store: Store) -> None:
 def test_extreme_samples_and_prune(store: Store) -> None:
     from datetime import timedelta
 
-    from csmon.models import iso, utcnow
+    from facet.models import iso, utcnow
 
     store.insert_extreme_samples([
         {"market_hash_name": "X", "platform": "BUFF", "sell_price": 100.0,
@@ -294,7 +294,7 @@ def test_extreme_samples_and_prune(store: Store) -> None:
 # ── 极致追踪的变动判定 ─────────────────────────────────────
 
 def test_changed_modes() -> None:
-    from csmon.extreme import MODE_ANY, MODE_PERCENT, ExtremeTracker
+    from facet.extreme import MODE_ANY, MODE_PERCENT, ExtremeTracker
 
     assert ExtremeTracker._changed(100.0, 100.0, MODE_ANY, 0) is False
     assert ExtremeTracker._changed(100.0, 100.01, MODE_ANY, 0) is True
@@ -306,7 +306,7 @@ def test_changed_modes() -> None:
 
 
 def test_extreme_task_quiet_hours() -> None:
-    from csmon.extreme import ExtremeTask
+    from facet.extreme import ExtremeTask
 
     task = ExtremeTask(market_hash_name="X", platform="BUFF",
                        quiet_start=23, quiet_end=8)
@@ -323,7 +323,7 @@ def test_extreme_task_quiet_hours() -> None:
 
 def test_extreme_backoff_and_recover() -> None:
     """限流降频必须指数放大且有上限，成功后逐步收回 —— 不能被限流打崩也不能永久卡在低频。"""
-    from csmon.extreme import MAX_INTERVAL, ExtremeTask, ExtremeTracker
+    from facet.extreme import MAX_INTERVAL, ExtremeTask, ExtremeTracker
 
     task = ExtremeTask(market_hash_name="X", platform="BUFF", interval_seconds=10)
     tracker = ExtremeTracker.__new__(ExtremeTracker)     # 只测纯逻辑，不建依赖
@@ -338,7 +338,7 @@ def test_extreme_backoff_and_recover() -> None:
         tracker._backoff(task)
     assert task.current_interval == MAX_INTERVAL
 
-    from csmon.extreme import RECOVER_AFTER_SUCCESS
+    from facet.extreme import RECOVER_AFTER_SUCCESS
     for _ in range(RECOVER_AFTER_SUCCESS):
         tracker._recover(task)
     assert task.current_interval < MAX_INTERVAL

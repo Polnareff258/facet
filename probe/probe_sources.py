@@ -1,6 +1,6 @@
 """多源可达性探测：BUFF 匿名面 / 悠悠有品在售价通道 / 加密库可用性。
 
-只做只读探测，不写任何数据。用于选定 youyoumonitor 的默认适配器组合。
+只做只读探测，不写任何数据。用于选定 facet 的默认适配器组合。
 """
 from __future__ import annotations
 
@@ -159,7 +159,7 @@ def probe_youpin() -> None:
 
 def main() -> None:
     print("=" * 78)
-    print("youyoumonitor 数据源可达性探测")
+    print("facet 数据源可达性探测")
     print("=" * 78)
     t0 = time.time()
     probe_crypto()

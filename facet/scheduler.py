@@ -105,7 +105,7 @@ class Monitor:
         rules = self.store.list_watch()
         result.watched = len(rules)
         if not rules:
-            result.notes.append("监控清单为空：先用 `python -m csmon watch add <名称>` 添加")
+            result.notes.append("监控清单为空：先用 `python -m facet watch add <名称>` 添加")
             result.finished_at = iso()
             return result
 
@@ -116,7 +116,7 @@ class Monitor:
         if missing["buff_goods_id"]:
             result.notes.append(
                 f"{len(missing['buff_goods_id'])} 个饰品缺 BUFF goods_id"
-                f"（buff_direct 会跳过；用 `python -m csmon index resolve` 补齐）")
+                f"（buff_direct 会跳过；用 `python -m facet index resolve` 补齐）")
         if missing["youpin_template_id"]:
             result.notes.append(
                 f"{len(missing['youpin_template_id'])} 个饰品缺悠悠有品 templateId"
@@ -128,7 +128,7 @@ class Monitor:
 
         if adapters:
             with ThreadPoolExecutor(max_workers=min(4, len(adapters)),
-                                    thread_name_prefix="csmon-fetch") as pool:
+                                    thread_name_prefix="facet-fetch") as pool:
                 futures = {pool.submit(a.fetch_report, refs): a for a in adapters}
                 for future in as_completed(futures):
                     adapter = futures[future]

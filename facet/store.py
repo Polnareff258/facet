@@ -1367,7 +1367,7 @@ class Store:
     # ── 租赁行情 ───────────────────────────────────────────
 
     def insert_rent_snapshot(self, snapshot: Any) -> int:
-        """写入一条租赁快照（接收 csmon.rental.RentSnapshot）。"""
+        """写入一条租赁快照（接收 facet.rental.RentSnapshot）。"""
         import json as _json
 
         with self._write_lock:

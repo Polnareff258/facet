@@ -198,13 +198,13 @@ def pip_index_args(profile: PlatformProfile | None = None) -> list[str]:
     """按平台给出额外的 pip 索引参数。
 
     32 位 ARM 上 piwheels 提供大量预编译轮子，能省掉本地编译。
-    仅在 32 位 ARM 或显式设置 CSMON_PIP_EXTRA_INDEX 时启用。
+    仅在 32 位 ARM 或显式设置 FACET_PIP_EXTRA_INDEX 时启用。
     """
     prof = profile or detect()
     extra: list[str] = []
     if prof.is_arm and not prof.is_64bit:
         extra += ["--extra-index-url", "https://www.piwheels.org/simple"]
-    env_extra = os.environ.get("CSMON_PIP_EXTRA_INDEX")
+    env_extra = os.environ.get("FACET_PIP_EXTRA_INDEX")
     if env_extra:
         extra += ["--extra-index-url", env_extra]
     return extra

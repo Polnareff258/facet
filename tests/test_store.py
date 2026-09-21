@@ -3,8 +3,8 @@ from __future__ import annotations
 
 from datetime import timedelta
 
-from csmon.models import AlertEvent, ItemRef, SourceQuote, WatchRule, utcnow
-from csmon.store import Store
+from facet.models import AlertEvent, ItemRef, SourceQuote, WatchRule, utcnow
+from facet.store import Store
 
 
 def test_upsert_item_merges_partial_ids(store: Store) -> None:

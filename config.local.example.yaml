@@ -1,4 +1,4 @@
-# youyoumonitor 本地私有配置模板
+# facet 本地私有配置模板
 #
 # 复制为 config.local.yaml 后按需修改：
 #     Windows:  copy config.local.example.yaml config.local.yaml
@@ -32,7 +32,7 @@ sources:
     enabled: true
 
   # 档位模式：按相位/宝石/渐变区间分别产出求购价
-  # 开启前建议先建词表：csmon variants sync "★ M9 Bayonet | Doppler (Factory New)"
+  # 开启前建议先建词表：facet variants sync "★ M9 Bayonet | Doppler (Factory New)"
   # tier_mode: true
   # tier_pages: 2
 
@@ -42,7 +42,7 @@ sources:
 
 # ── LLM ───────────────────────────────────────────────────
 # 推荐直接跑向导，它会写这里 + .env 并当场验证：
-#     python -m csmon setup llm
+#     python -m facet setup llm
 llm:
   preset: ""                 # deepseek / openai / moonshot / dashscope /
                              # zhipu / siliconflow / ollama / lmstudio / vllm
@@ -51,7 +51,7 @@ llm:
 
 # ── 关注清单（我真正要买/要卖的）────────────────────────────
 # 更推荐用 CLI 添加，会自动展开变体：
-#     csmon focus add "AK-47 | Redline" --intent buy --target 95 --wears FT,MW
+#     facet focus add "AK-47 | Redline" --intent buy --target 95 --wears FT,MW
 # watchlist:
 #   - market_hash_name: "AK-47 | Redline (Field-Tested)"
 #     below: 95
@@ -70,7 +70,7 @@ notify:
 
 # ── 运行参数 ───────────────────────────────────────────────
 # poll_interval: 1800        # 采集间隔秒（树莓派建议 3600）
-# database: data/csmon.db    # 数据库路径（树莓派建议放 USB/SSD）
+# database: data/facet.db    # 数据库路径（树莓派建议放 USB/SSD）
 
 web:
   port: 8787
