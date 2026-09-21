@@ -222,6 +222,27 @@ python -m facet doctor
 | 告警不推送 | `config.yaml` 里 `notify.enabled` 默认 `false`；先用 `dry_run: true` 验证规则 |
 | Windows 提示禁止运行脚本 | 用 `powershell -ExecutionPolicy Bypass -File .\start.ps1`，或直接双击 `start.cmd` |
 | systemd 服务起不来 | `journalctl -u facet -n 50 --no-pager`；多数是路径或权限问题，重跑 `install-linux.sh` 会重建 unit |
+| `git push` 报 `Failed to connect to github.com port 443` | 直连间歇性不通。用代理：`git config http.proxy http://127.0.0.1:10808`（v2rayN 的 mixed 入站端口），或用助手自动选路径：`python tools/push.py` |
+| `git push` 报 `schannel: AcquireCredentialsHandle failed` | Windows git 默认用 schannel，本机凭据链异常。改用 OpenSSL 后端：`git config http.sslBackend openssl` |
+| `git push` 报 `couldn't create signal pipe` / `could not read Username` | 凭据助手（git-credential-manager）需要 spawn bash，在受限环境里被拦。用内联 token：`python tools/push.py`（它不把 token 写进 `.git/config`） |
+
+### 推送助手 `tools/push.py`
+
+把上面三个坑一次处理掉：
+
+```bash
+python tools/push.py --probe            # 只探测：直连通不通、代理找不找得到
+python tools/push.py                    # 自动选路径推送
+python tools/push.py -m "提交说明"       # 先提交再推
+python tools/push.py --no-proxy         # 强制直连
+python tools/push.py --proxy http://127.0.0.1:7890
+```
+
+它会依次尝试「直连 → 本机代理」，用 `gh auth token` 取凭据（不落盘），
+成功走代理时还会提示把代理写进仓库配置。
+
+**判断本机网络不要用 `curl.exe`** —— 在受限环境里它连直连都返回 `000`，
+会把结论带偏。用 `python tools/push.py --probe`，或直接拿 python 的 requests 测。
 
 ### 关于 Windows 下的文件编码（重要，别踩）
 
