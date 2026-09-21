@@ -47,6 +47,15 @@ SYSTEM_PROMPT = """\
   的回答是不合格的。
 - 不要给出「保证收益」「稳赚」这类表述。
 
+关于租赁（如果数据里有 rental 段）：
+- CS2 饰品除了低买高卖，还可以**出租收租**。有租赁数据的标的其收益来自
+  「租金 + 价格变动 − 手续费」，只盯价差会看漏这条路。
+- 注意区分「理论年化」（日租金×365÷价格，满租上限）与「平台年化」。
+  出租率是推算值，平台算法未公开，不要把它当成精确事实。
+- 长租日租金可能**低于**短租，但空置率更低、折算年化反而更高 ——
+  不要只看日租金高低就下结论。
+- 租赁标的最大的风险是「租金赚了几个月，价格跌掉一半」，请评估这个风险。
+
 输出要求：只输出一个 JSON 对象，字段如下（全部必填）：
 {
   "action": "buy|hold|sell|avoid|watch",
@@ -156,6 +165,33 @@ def build_context(store: Store, market_hash_name: str,
     # 极致追踪采样（如果有）
     extreme = store.latest_extreme_sample(market_hash_name, chosen or "BUFF")
 
+    # 租赁收益（如果有）—— 这是「持有型」标的的核心收益来源，
+    # 没有它模型看不到「不卖也能赚钱」这条路径，会把租赁标的误判成纯投机
+    rental_block = None
+    try:
+        from . import rental as rental_mod
+
+        rent_row = store.latest_rent_snapshot(market_hash_name)
+        if rent_row:
+            from .cli import _snapshot_from_row
+            rent_snapshot = _snapshot_from_row(rent_row)
+            if rent_snapshot:
+                yields = rental_mod.analyze_all(rent_snapshot)
+                verdict = rental_mod.judge(rent_snapshot, yields)
+                rental_block = {
+                    "short_daily_rent": rent_snapshot.short_daily_rent,
+                    "long_daily_rent": rent_snapshot.long_daily_rent,
+                    "short_annual_pct": rent_snapshot.short_annual_pct,
+                    "long_annual_pct": rent_snapshot.long_annual_pct,
+                    "lease_listings": rent_snapshot.lease_listings,
+                    "transfer_price": rent_snapshot.transfer_price,
+                    "observed_at": rent_row.get("observed_at"),
+                    "scenarios": [y.to_dict() for y in yields],
+                    "verdict": verdict.to_dict(),
+                }
+    except Exception:  # noqa: BLE001 — 租赁数据缺失不能拖垮建议生成
+        logger.exception("租赁上下文构建失败（忽略）")
+
     payload: dict[str, Any] = {
         "item": {
             "market_hash_name": market_hash_name,
@@ -208,6 +244,7 @@ def build_context(store: Store, market_hash_name: str,
             for a in alerts
         ],
         "latest_extreme_sample": extreme,
+        "rental": rental_block,
         "data_window_hours": hours,
     }
 

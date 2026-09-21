@@ -27,6 +27,7 @@ logger = logging.getLogger(__name__)
 API_BASE = "https://api.csqaq.com/api/v1"
 ENDPOINT_PRICE_BY_MHN = "/goods/getPriceByMarketHashName"
 ENDPOINT_GOODS_ID = "/goods/getGoodsIdByKeyWord"
+ENDPOINT_GOOD_DETAIL = "/info/good"
 
 # CSQAQ 的价格字段 -> 本项目的平台标识
 SELL_FIELD = {
@@ -165,6 +166,101 @@ class CsqaqAdapter(SourceAdapter):
         if isinstance(data, dict):
             data = data.get("list") or data.get("data") or []
         return [d for d in data if isinstance(d, dict)]
+
+    # ── 单件详情（含租赁数据）───────────────────────────────
+
+    def fetch_good_detail(self, good_id: int) -> dict[str, Any] | None:
+        """取单件饰品详情。
+
+        这是**唯一**一个能一次拿到下列全部数据的接口（授权 API，单次请求）：
+
+          · 租赁日租金：`yyyp_lease_price`（短租）/ `yyyp_long_lease_price`（长租）
+          · 租赁年化率：`yyyp_lease_annual` / `yyyp_long_lease_annual`
+          · 出租挂单数：`yyyp_lease_num`（衡量出租竞争与流动性）
+          · 多平台在售价：buff / yyyp / steam / c5 / igxe / r8 / eco
+          · 涨跌：`sell_price_rate_{1,7,15,30,90,180,365}`（百分比）与绝对值
+          · 成交：`turnover_number` / `turnover_avg_price`
+          · 存世量：`statistic`
+          · 相位映射：`dpl[]` 直接给出 label ↔ paint_index ↔ 各相位价格
+
+        只读，不写库。解析交给 csmon.rental。
+        """
+        gate = self.gates.gate(self.name, "good_detail", self.config.min_interval)
+        try:
+            gate.acquire()
+        except RateLimitExceeded as exc:
+            logger.info("[csqaq] 详情查询跳过：%s", exc)
+            return None
+
+        try:
+            resp = self._session.get(
+                API_BASE + ENDPOINT_GOOD_DETAIL,
+                params={"id": int(good_id)},
+                headers={"ApiToken": self.config.api_token or ""},
+                timeout=self.config.timeout,
+            )
+        except requests.RequestException as exc:
+            gate.report_transient_failure(str(exc), cooldown=30.0)
+            logger.warning("[csqaq] 详情查询网络错误: %s", exc)
+            return None
+
+        if resp.status_code in (401, 400):
+            gate.report_success()
+            logger.error("[csqaq] 详情查询鉴权失败 HTTP %s：检查 Token 与白名单 IP",
+                         resp.status_code)
+            return None
+        if resp.status_code == 429:
+            gate.report_rate_limit("HTTP 429")
+            return None
+        if resp.status_code >= 500:
+            gate.report_transient_failure(f"HTTP {resp.status_code}", cooldown=20.0)
+            return None
+
+        gate.report_success()
+        try:
+            body = resp.json()
+        except ValueError:
+            return None
+        if body.get("code") not in (200, 0):
+            logger.warning("[csqaq] 详情业务错误 code=%s msg=%s",
+                           body.get("code"), body.get("msg"))
+            return None
+
+        data = body.get("data") or {}
+        goods = data.get("goods_info") or {}
+        if not goods:
+            return None
+
+        # 原始载荷整包带回：字段很多且会变，解析层按需取用，避免这里写死
+        goods["_dpl"] = data.get("dpl") or []
+        goods["_button_list"] = data.get("button_list") or []
+        goods["_statistic_list"] = data.get("statistic_list") or []
+        goods["_container"] = data.get("container") or []
+        return goods
+
+    def find_good_id(self, market_hash_name: str) -> int | None:
+        """按名称精确找 CSQAQ 的 good_id（详情接口需要它）。"""
+        rows = self.resolve_keyword(market_hash_name)
+        for row in rows:
+            if not isinstance(row, dict):
+                continue
+            name = row.get("marketHashName") or row.get("market_hash_name")
+            gid = row.get("id") or row.get("goodId") or row.get("good_id")
+            if name == market_hash_name and gid:
+                try:
+                    return int(gid)
+                except (TypeError, ValueError):
+                    continue
+        # 退而求其次：用第一条
+        for row in rows:
+            if isinstance(row, dict):
+                gid = row.get("id") or row.get("goodId") or row.get("good_id")
+                if gid:
+                    try:
+                        return int(gid)
+                    except (TypeError, ValueError):
+                        continue
+        return None
 
     def close(self) -> None:
         self._session.close()

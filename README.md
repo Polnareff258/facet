@@ -107,7 +107,8 @@ vllm         vLLM（本机）
 | K 线 + 指标 | 日线 OHLC、MA/EMA、RSI(14)、布林带、年化波动率、年化收益率、动量、最大回撤、Z 值 |
 | 跨平台套利雷达 | 手续费后净收益，区分**可即时成交**与**需挂单等** |
 | 极致追踪 | 单件秒级轮询；命中限流自动降频，可在约定时段静默 |
-| **LLM 建议** | 把行情+指标+磨损阶梯+档位+你的目标价组织成结构化上下文，强制输出含反面证据的 JSON |
+| **租赁收益** | 短租/长租日租金、平台年化、出租竞争；合成「租金 + 波动 − 手续费」的年化结论 |
+| **LLM 建议** | 把行情+指标+磨损阶梯+档位+租赁+你的目标价组织成结构化上下文，强制输出含反面证据的 JSON |
 | 涨跌 / 流动性榜 | 相对中位价的涨跌排行；在售量榜用于判断搬砖可行性 |
 | 全文搜索 | SQLite FTS5（无 FTS5 的构建自动退回 LIKE） |
 | 数据归档 | 超期明细按天聚合，一年数据从数百 MB 压到几 MB |
@@ -195,7 +196,46 @@ python -m csmon focus add "AK-47 | Redline" --intent buy \
 python -m csmon focus ls        # 状态：达到买点 / 接近买点 / 等待回落
 ```
 
-### LLM 建议
+### 租赁收益（第二条收益路径）
+
+CS 饰品除了低买高卖还能**出租收租**。日租金高不代表收益高 —— 本模块把租金、
+市场波动、手续费、流动性合成一个结论：
+
+```
+毛租金   = 日租金 × 持有天数 × 出租率
+净租金   = 毛租金 × (1 − 租赁抽成)
+价格变动 = 买入价 × 持有期涨跌
+卖出成本 = (买入价 + 价格变动) × (卖出抽成 + 提现费)
+总收益   = 净租金 + 价格变动 − 卖出成本
+```
+
+真实样本（CSQAQ 官方文档数据，M9 刺刀多普勒）：
+
+```
+短租日租金 4.14   长租日租金 3.55      ← 短租日租金更高
+短租年化   11.92%  长租年化   14.05%    ← 但长租年化更高（空置率低）
+
+同一件饰品，持有周期决定盈亏：
+  30 天  -125.4%      90 天  -20.8%      180 天  +50.0%
+  ↑ 因为租金线性累积，价格变动不是
+```
+
+```bash
+python -m csmon rent scan            # 采集关注清单的租赁数据
+python -m csmon rent show "★ M9 Bayonet | Doppler (Factory New)"
+python -m csmon rent rank            # 按年化排行
+python tools/demo_rental.py          # 用真实样本演示（不需要 Token）
+```
+
+数据来自 CSQAQ 授权接口，一次请求拿全：短租/长租日租金、平台年化、出租挂单数、
+各平台在售价、1~365 天涨跌、成交量、存世量，以及**相位 ↔ paint_index 映射**
+（红宝石 415 / 蓝宝石 416 / 黑珍珠 417 / Phase1-4 = 418-421）。
+
+⚠ 两个年化率必须分清：**理论年化**（日租金×365÷价格）是满租上限，
+**平台年化**是平台口径（推测已折算空置）。出租率由两者比值推算，属推算值；
+平台未给年化时按保守的 60% 假设，而非满租。
+
+详见 **[docs/RENTAL.md](docs/RENTAL.md)**。
 
 把结构化行情事实送进模型，而不是让它凭空发挥。输出被强制为固定 JSON
 （action/confidence/target/stop_loss/reasoning/**counter_evidence**/risks/data_gaps），
@@ -380,6 +420,12 @@ python -m csmon patterns learn "★ 卡兰比特 | 多普勒 (崭新出厂)"
 python -m csmon patterns show "Doppler"
 python -m csmon patterns stats
 
+# 租赁收益
+python -m csmon rent scan                 # 采集关注清单的租赁数据
+python -m csmon rent show "★ M9 Bayonet | Doppler (Factory New)"
+python -m csmon rent rank --min-liquidity 30
+python -m csmon rent ls / detail "名称"
+
 # LLM 建议
 python -m csmon advice config / probe
 python -m csmon advice ask [名称]
@@ -426,7 +472,8 @@ LLM 客户端（三种协议、错误脱敏、JSON 抽取的四种形态）、�
 ## 文档
 
 - [docs/DEPLOY.md](docs/DEPLOY.md) — 部署与排错（Windows / Linux / 树莓派）
-- [docs/VARIANTS.md](docs/VARIANTS.md) — **变体分类、中文名、关注清单、LLM 上下文**
+- [docs/VARIANTS.md](docs/VARIANTS.md) — 变体分类、中文名、关注清单、LLM 上下文
+- [docs/RENTAL.md](docs/RENTAL.md) — **租赁收益模型、两个年化率的区别、费率覆盖**
 - [docs/DATA_SOURCES.md](docs/DATA_SOURCES.md) — 数据源接口、字段、限额、覆盖矩阵与实测证据
 - [docs/REVERSE_ENGINEERING.md](docs/REVERSE_ENGINEERING.md) — 接口逆向过程与踩过的坑
 - [docs/LICENSES.md](docs/LICENSES.md) — 参考项目许可与复用边界

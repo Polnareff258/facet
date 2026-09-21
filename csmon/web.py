@@ -155,6 +155,59 @@ def create_app(config: Config, store: Store | None = None,
     def archive_status() -> dict[str, Any]:
         return db.archive_stats()
 
+    # ── 租赁收益 ───────────────────────────────────────────
+
+    @app.get("/api/rent")
+    def rent_rank(limit: int = Query(50, ge=1, le=500),
+                  min_liquidity: float = 0.0) -> dict[str, Any]:
+        """租赁收益排行：日租金 + 价格波动 + 手续费 → 年化与结论。"""
+        from . import rental as rental_mod
+        from .cli import _snapshot_from_row
+
+        rows = db.latest_rent_all(limit=2000)
+        pairs = []
+        for row in rows:
+            snapshot = _snapshot_from_row(row)
+            if snapshot is None:
+                continue
+            snapshot.display_name = app.state.names.resolve(row["market_hash_name"])
+            yields = rental_mod.analyze_all(snapshot)
+            pairs.append((snapshot, rental_mod.judge(snapshot, yields)))
+
+        board = rental_mod.rank(pairs, limit=limit, min_liquidity=min_liquidity)
+        return {"count": len(board), "items": board,
+                "stats": db.rent_stats(),
+                "assumptions": {
+                    "rent_fee": rental_mod.DEFAULT_RENT_FEE,
+                    "sell_fee": rental_mod.DEFAULT_SELL_FEE,
+                    "withdraw_fee": rental_mod.DEFAULT_WITHDRAW_FEE,
+                    "occupancy_fallback": rental_mod.OCCUPANCY_FALLBACK,
+                }}
+
+    @app.get("/api/rent/{market_hash_name}")
+    def rent_detail(market_hash_name: str) -> dict[str, Any]:
+        """单个饰品的租赁全量分析（含各周期方案与相位价格）。"""
+        from . import rental as rental_mod
+        from .cli import _snapshot_from_row
+
+        row = db.latest_rent_snapshot(market_hash_name)
+        if not row:
+            raise HTTPException(status_code=404,
+                                detail="本地没有该饰品的租赁数据，先跑 rent scan")
+        snapshot = _snapshot_from_row(row)
+        if snapshot is None:
+            raise HTTPException(status_code=500, detail="快照解析失败")
+        snapshot.display_name = app.state.names.resolve(market_hash_name)
+        yields = rental_mod.analyze_all(snapshot)
+        verdict = rental_mod.judge(snapshot, yields)
+        return {
+            "snapshot": snapshot.to_dict(),
+            "display_name": snapshot.display_name,
+            "scenarios": [y.to_dict() for y in yields],
+            "verdict": verdict.to_dict(),
+            "observed_at": row.get("observed_at"),
+        }
+
     @app.get("/api/platform")
     def platform_info() -> dict[str, Any]:
         """运行平台画像（看板页脚展示，便于确认树莓派上的实际调优值）。"""

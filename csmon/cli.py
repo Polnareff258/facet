@@ -1094,6 +1094,388 @@ def cmd_setup(args: argparse.Namespace, config: Config) -> int:
     return 0
 
 
+def cmd_rent(args: argparse.Namespace, config: Config) -> int:
+    """租赁收益分析：日租金 + 市场波动 + 手续费 → 综合结论。"""
+    import json as _json
+
+    from . import rental as rental_mod
+    from .names import NameResolver
+
+    store = Store(config.database)
+    adapter = None
+    resolver = NameResolver(store)
+    try:
+        def build_adapter():
+            from .sources.csqaq import CsqaqAdapter
+            cfg = config.source("csqaq")
+            if not cfg.api_token:
+                print("租赁数据来自 CSQAQ（授权接口）。先配置 Token：")
+                print("  python -m csmon setup csqaq")
+                return None
+            return CsqaqAdapter(cfg)
+
+        if args.action == "show":
+            if not args.name:
+                print("需要饰品名", file=sys.stderr)
+                return 2
+            adapter = build_adapter()
+            if adapter is None:
+                return 1
+
+            print(f"\n查询 {resolver.resolve(args.name)} …")
+            good_id = adapter.find_good_id(args.name)
+            if not good_id:
+                print(f"CSQAQ 找不到「{args.name}」。")
+                print("名称需为 Steam 官方 market_hash_name，可先用 csmon search 确认。")
+                return 1
+
+            goods = adapter.fetch_good_detail(good_id)
+            if not goods:
+                print("取详情失败（检查 Token / 白名单 IP / 该饰品是否被覆盖）")
+                return 1
+
+            snapshot = rental_mod.parse_detail(goods, resolver.resolve(args.name))
+            store.insert_rent_snapshot(snapshot)
+            _print_rent_report(snapshot, rental_mod)
+            return 0
+
+        if args.action == "scan":
+            adapter = build_adapter()
+            if adapter is None:
+                return 1
+
+            # 采集对象：优先关注清单，其次已监控的饰品
+            names = [r.market_hash_name for r in store.list_focus()]
+            if not names:
+                names = [r.market_hash_name for r in store.list_watch()]
+            if not names:
+                print("没有可扫描的标的。先加关注：")
+                print('  python -m csmon focus add "AK-47 | Redline" --intent buy')
+                return 1
+            if args.limit:
+                names = names[:args.limit]
+
+            print(f"将从 CSQAQ 采集 {len(names)} 个饰品的租赁数据")
+            print(f"（每项一次请求，间隔 {args.delay}s，单 IP 限 1 次/秒）\n")
+
+            ok = failed = 0
+            for index, name in enumerate(names, start=1):
+                display = resolver.resolve(name)
+                print(f"  [{index}/{len(names)}] {display}")
+                good_id = adapter.find_good_id(name)
+                if not good_id:
+                    print("        未找到对应 good_id，跳过")
+                    failed += 1
+                    continue
+                goods = adapter.fetch_good_detail(good_id)
+                if not goods:
+                    print("        详情获取失败")
+                    failed += 1
+                    continue
+                snapshot = rental_mod.parse_detail(goods, display)
+                store.insert_rent_snapshot(snapshot)
+
+                yields = rental_mod.analyze_all(
+                    snapshot, horizons=_parse_horizons(args.horizons))
+                verdict = rental_mod.judge(snapshot, yields)
+                best = verdict.best
+                if best:
+                    print(f"        年化 {best.annualized_pct:+.1f}%"
+                          f"（{rental_mod.MODE_CN[best.mode]} {best.horizon_days}天）"
+                          f"  {verdict.headline}")
+                else:
+                    print("        无出租数据")
+                ok += 1
+                if index < len(names):
+                    time.sleep(args.delay)
+
+            print(f"\n完成：成功 {ok}，失败 {failed}")
+            stats = store.rent_stats()
+            print(f"租赁库：{stats['items_with_rent']} 个饰品有租价数据")
+            return 0
+
+        if args.action == "rank":
+            rows = store.latest_rent_all(limit=2000)
+            if not rows:
+                print("租赁库为空。先采集：python -m csmon rent scan")
+                return 0
+
+            ranked: list[tuple[Any, Any]] = []
+            for row in rows:
+                snapshot = _snapshot_from_row(row)
+                if snapshot is None:
+                    continue
+                yields = rental_mod.analyze_all(
+                    snapshot, horizons=_parse_horizons(args.horizons))
+                verdict = rental_mod.judge(snapshot, yields)
+                ranked.append((snapshot, verdict))
+
+            board = rental_mod.rank(ranked, limit=args.limit,
+                                    min_liquidity=args.min_liquidity)
+            if not board:
+                print("没有满足条件的标的（可放宽 --min-liquidity）")
+                return 0
+
+            print(f"\n租赁收益排行（按最佳年化；手续费与出租率已计入）\n")
+            print(f"{'年化':>8} {'风险调整':>9} {'模式':<5} {'天数':>4} "
+                  f"{'日租':>7} {'出租率':>7} {'流动性':>6} 饰品")
+            for row in board:
+                ra = (f"{row['risk_adjusted_pct']:.2f}"
+                      if row["risk_adjusted_pct"] is not None else "—")
+                liq = (f"{row['liquidity_score']:.0f}"
+                       if row["liquidity_score"] is not None else "—")
+                print(f"{row['annualized_pct']:>7.1f}% {ra:>9} "
+                      f"{row['mode_cn']:<5} {row['horizon_days']:>4} "
+                      f"{row['daily_rent']:>7.2f} "
+                      f"{row['occupancy']*100:>6.0f}% {liq:>6} "
+                      f"{(row['display_name'] or row['market_hash_name'])[:34]}")
+            print("\n说明：")
+            print("  · 年化 =（净租金 + 价格变动 − 卖出成本）÷ 买入价，按持有天数年化")
+            print("  · 出租率由「平台年化 ÷ 理论年化」推算，平台算法未公开")
+            print("  · 风险调整 = 年化 ÷ 年化波动率，越高说明收益相对波动越划算")
+            return 0
+
+        if args.action == "ls":
+            stats = store.rent_stats()
+            print(f"租赁库：{stats['snapshots']} 条快照，"
+                  f"{stats['items']} 个饰品，其中 {stats['items_with_rent']} 个有租价")
+            rows = store.latest_rent_all(limit=args.limit)
+            if not rows:
+                print("（空）先采集：python -m csmon rent scan")
+                return 0
+            print(f"\n{'短租日租':>9} {'长租日租':>9} {'短租年化':>9} {'长租年化':>9} "
+                  f"{'出租挂单':>8} 饰品")
+            for row in rows:
+                def _fmt(value: object, suffix: str = "") -> str:
+                    if value is None:
+                        return "—"
+                    try:
+                        return f"{float(value):.2f}{suffix}"
+                    except (TypeError, ValueError):
+                        return str(value)
+                print(f"{_fmt(row['short_daily_rent']):>9} "
+                      f"{_fmt(row['long_daily_rent']):>9} "
+                      f"{_fmt(row['short_annual_pct'], '%'):>9} "
+                      f"{_fmt(row['long_annual_pct'], '%'):>9} "
+                      f"{row['lease_listings'] if row['lease_listings'] is not None else '—':>8} "
+                      f"{resolver.resolve(row['market_hash_name'])[:34]}")
+            return 0
+
+        if args.action == "detail":
+            if not args.name:
+                print("需要饰品名", file=sys.stderr)
+                return 2
+            row = store.latest_rent_snapshot(args.name)
+            if not row:
+                print("本地没有该饰品的租赁数据。先执行：")
+                print(f'  python -m csmon rent show "{args.name}"')
+                return 1
+            snapshot = _snapshot_from_row(row)
+            if snapshot is None:
+                print("快照解析失败")
+                return 1
+            _print_rent_report(snapshot, rental_mod, show_raw=_json)
+            return 0
+
+        print(f"未知操作：{args.action}", file=sys.stderr)
+        return 2
+    finally:
+        if adapter is not None:
+            adapter.close()
+        store.close()
+
+
+def _parse_horizons(spec: str | None) -> tuple[int, ...]:
+    from .rental import DEFAULT_HORIZONS
+
+    if not spec:
+        return DEFAULT_HORIZONS
+    out: list[int] = []
+    for piece in spec.replace("，", ",").split(","):
+        piece = piece.strip()
+        if piece.isdigit() and int(piece) > 0:
+            out.append(int(piece))
+    return tuple(out) or DEFAULT_HORIZONS
+
+
+def _snapshot_from_row(row: dict[str, Any]):
+    """把库里的一行租赁快照还原成 RentSnapshot。"""
+    import json as _json
+
+    from .rental import PhaseInfo, RentSnapshot
+
+    if not row:
+        return None
+    try:
+        changes = {int(k): float(v)
+                   for k, v in (_json.loads(row.get("price_change") or "{}")).items()}
+    except (ValueError, TypeError):
+        changes = {}
+
+    phases: list[PhaseInfo] = []
+    try:
+        for entry in _json.loads(row.get("phases") or "[]"):
+            phases.append(PhaseInfo(
+                label=str(entry.get("label") or "?"),
+                label_en=entry.get("label_en"),
+                paint_index=entry.get("paint_index"),
+                buff_sell_price=entry.get("buff_sell_price"),
+                buff_buy_price=entry.get("buff_buy_price"),
+            ))
+    except (ValueError, TypeError):
+        pass
+
+    snapshot = RentSnapshot(
+        market_hash_name=row["market_hash_name"],
+        display_name=None,
+        csqaq_good_id=row.get("csqaq_good_id"),
+        buff_sell_price=row.get("buff_sell_price"),
+        yyyp_sell_price=row.get("yyyp_sell_price"),
+        steam_sell_price=row.get("steam_sell_price"),
+        short_daily_rent=row.get("short_daily_rent"),
+        long_daily_rent=row.get("long_daily_rent"),
+        short_annual_pct=row.get("short_annual_pct"),
+        long_annual_pct=row.get("long_annual_pct"),
+        lease_listings=row.get("lease_listings"),
+        transfer_price=row.get("transfer_price"),
+        turnover_number=row.get("turnover_number"),
+        turnover_avg_price=row.get("turnover_avg_price"),
+        supply=row.get("supply"),
+        sell_num=row.get("sell_num"),
+        buy_num=row.get("buy_num"),
+        price_change_pct=changes,
+        phases=phases,
+        source=row.get("source") or "csqaq",
+    )
+    # 必须赋值给变量再返回：直接 return 会让下面这行变成死代码，
+    # 导致 market_price 永远还原不回去（收益率分母丢失口径）
+    return _restore_market_price(snapshot, row)
+
+
+def _restore_market_price(snapshot: Any, row: dict[str, Any]) -> Any:
+    """兜底还原买入价。
+
+    正常情况下分平台价格都存了、market_price 能自己算出来。这里只在
+    **老库缺列**（迁移前写入的快照没有分平台价）时补一刀，
+    否则那些历史快照的收益率分母会变成 None、整条分析失效。
+    """
+    if snapshot is None:
+        return None
+    has_any = any(p for p in (snapshot.buff_sell_price, snapshot.yyyp_sell_price,
+                              snapshot.steam_sell_price))
+    if has_any:
+        return snapshot
+
+    price = row.get("market_price")
+    if price:
+        try:
+            snapshot.buff_sell_price = float(price)
+        except (TypeError, ValueError):
+            pass
+    return snapshot
+
+
+def _print_rent_report(snapshot: Any, rental_mod: Any, show_raw: Any = None) -> None:
+    """打印单个饰品的租赁分析报告。"""
+    print(f"\n{'=' * 68}")
+    print(f"  {snapshot.display_name or snapshot.market_hash_name}")
+    if snapshot.display_name:
+        print(f"  {snapshot.market_hash_name}")
+    print(f"{'=' * 68}\n")
+
+    print("市场行情")
+    print(f"  买入价（各平台最低）  ¥{snapshot.market_price:.2f}"
+          if snapshot.market_price else "  买入价                无数据")
+    if snapshot.buff_sell_price:
+        print(f"    BUFF 在售           ¥{snapshot.buff_sell_price:.2f}")
+    if snapshot.yyyp_sell_price:
+        print(f"    悠悠有品 在售       ¥{snapshot.yyyp_sell_price:.2f}")
+    if snapshot.steam_sell_price:
+        print(f"    Steam 在售          ¥{snapshot.steam_sell_price:.2f}")
+    if snapshot.supply is not None:
+        print(f"  存世量                {snapshot.supply}")
+    if snapshot.sell_num is not None:
+        print(f"  在售量                {snapshot.sell_num}")
+    if snapshot.turnover_number is not None:
+        print(f"  成交量                {snapshot.turnover_number}"
+              + (f"   成交均价 ¥{snapshot.turnover_avg_price:.2f}"
+                 if snapshot.turnover_avg_price else ""))
+
+    print("\n租赁行情")
+    if snapshot.short_daily_rent:
+        print(f"  短租日租金            ¥{snapshot.short_daily_rent:.2f}"
+              + (f"   平台年化 {snapshot.short_annual_pct:.2f}%"
+                 if snapshot.short_annual_pct is not None else ""))
+    if snapshot.long_daily_rent:
+        print(f"  长租日租金            ¥{snapshot.long_daily_rent:.2f}"
+              + (f"   平台年化 {snapshot.long_annual_pct:.2f}%"
+                 if snapshot.long_annual_pct is not None else ""))
+    if snapshot.lease_listings is not None:
+        print(f"  出租挂单数            {snapshot.lease_listings}")
+    if snapshot.transfer_price:
+        print(f"  转租价                ¥{snapshot.transfer_price:.2f}")
+    if not (snapshot.short_daily_rent or snapshot.long_daily_rent):
+        print("  （无出租挂单 —— 该饰品当前没有租赁市场）")
+
+    if snapshot.price_change_pct:
+        print("\n历史涨跌")
+        for window in sorted(snapshot.price_change_pct):
+            value = snapshot.price_change_pct[window]
+            print(f"  {window:>4} 天  {value:>+8.2f}%")
+
+    if snapshot.phases:
+        print("\n图案档位（含各档价格）")
+        print(f"  {'档位':<12} {'paint_index':>12} {'BUFF 在售':>12} {'BUFF 求购':>12}")
+        for phase in snapshot.phases:
+            pi = str(phase.paint_index) if phase.paint_index is not None else "—"
+            sp = f"¥{phase.buff_sell_price:.0f}" if phase.buff_sell_price else "—"
+            bp = f"¥{phase.buff_buy_price:.0f}" if phase.buff_buy_price else "—"
+            print(f"  {phase.label:<12} {pi:>12} {sp:>12} {bp:>12}")
+
+    yields = rental_mod.analyze_all(snapshot)
+    verdict = rental_mod.judge(snapshot, yields)
+    if not yields:
+        print("\n结论：数据不足，无法评估\n")
+        return
+
+    print(f"\n{'=' * 68}")
+    print(f"  收益分析（已计入租赁抽成、卖出抽成、提现费、推算出租率）")
+    print(f"{'=' * 68}\n")
+    print(f"{'模式':<5} {'天数':>5} {'日租':>7} {'出租率':>7} {'净租金':>9} "
+          f"{'价格变动':>10} {'卖出成本':>9} {'总收益':>9} {'年化':>8}")
+    for y in sorted(yields, key=lambda x: (x.mode, x.horizon_days)):
+        print(f"{rental_mod.MODE_CN[y.mode]:<5} {y.horizon_days:>5} "
+              f"{y.daily_rent:>7.2f} {y.occupancy*100:>6.0f}% "
+              f"{y.net_rent:>9.2f} {y.price_move:>+10.2f} "
+              f"{y.exit_cost:>9.2f} {y.total_return:>+9.2f} "
+              f"{y.annualized_pct:>+7.1f}%")
+
+    best = verdict.best
+    if best:
+        print(f"\n理论年化（满租、不含价格变动）  {best.theoretical_annual_pct:>+7.1f}%")
+        if best.platform_annual_pct is not None:
+            print(f"平台口径年化                {best.platform_annual_pct:>+7.1f}%")
+        if best.implied_occupancy is not None:
+            print(f"推算出租率                  {best.implied_occupancy:>7.0%}")
+        if best.volatility_pct is not None:
+            print(f"估计年化波动率              {best.volatility_pct:>7.1f}%")
+        if best.risk_adjusted_pct is not None:
+            print(f"风险调整（年化÷波动）       {best.risk_adjusted_pct:>7.2f}")
+        if best.liquidity_score is not None:
+            print(f"流动性评分                  {best.liquidity_score:>6.0f}/100")
+
+    print(f"\n{'─' * 68}")
+    print(f"  结论：{verdict.headline}")
+    print(f"{'─' * 68}")
+    for reason in verdict.reasons:
+        print(f"  · {reason}")
+    if verdict.caveats:
+        print("\n  需要注意：")
+        for caveat in verdict.caveats:
+            print(f"  ! {caveat}")
+    print()
+
+
 def cmd_sources(args: argparse.Namespace, config: Config) -> int:
     print("支持的源：")
     for row in describe_registry():
@@ -1381,6 +1763,19 @@ def build_parser() -> argparse.ArgumentParser:
     p_setup.add_argument("--no-verify", action="store_true",
                          help="跳过写入后的连通性验证")
     p_setup.set_defaults(func=cmd_setup)
+
+    # ── 租赁收益 ───────────────────────────────────────────
+
+    p_rent = sub.add_parser("rent", help="租赁收益分析（日租金 + 波动 + 手续费）")
+    p_rent.add_argument("action", choices=["show", "scan", "rank", "ls", "detail"])
+    p_rent.add_argument("name", nargs="?", help="饰品名（show 用）")
+    p_rent.add_argument("--horizons", default=None,
+                        help="持有周期（天），逗号分隔，默认 30,90,180")
+    p_rent.add_argument("--limit", type=int, default=30, help="scan/rank 条数上限")
+    p_rent.add_argument("--delay", type=float, default=1.1, help="采集间隔秒")
+    p_rent.add_argument("--min-liquidity", type=float, default=0.0,
+                        help="rank 时过滤掉流动性低于此值的标的")
+    p_rent.set_defaults(func=cmd_rent)
 
     return parser
 

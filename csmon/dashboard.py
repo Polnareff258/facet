@@ -130,6 +130,19 @@ DASHBOARD_HTML = r"""<!doctype html>
     <div class="readings" id="klineReadings"></div>
   </section>
 
+  <section data-tab="rent" class="hide">
+    <div class="row">
+      <span class="sub" id="rentNote"></span>
+      <span style="flex:1"></span>
+      <label class="sub">最低流动性
+        <input id="rentMinLiq" type="number" value="0" step="10" style="width:70px"></label>
+      <button class="act" onclick="loadRent()">刷新</button>
+    </div>
+    <h2>租赁收益排行（已计入租金抽成、卖出抽成、提现费、推算出租率）</h2>
+    <div id="rent"></div>
+    <div id="rentDetail" style="margin-top:22px"></div>
+  </section>
+
   <section data-tab="spread" class="hide">
     <h2>跨平台价差雷达</h2>
     <div class="row">
@@ -187,8 +200,9 @@ DASHBOARD_HTML = r"""<!doctype html>
 
 <script>
 const TABS = [
-  ["focus","关注"],["overview","概览"],["kline","K 线"],["spread","套利"],
-  ["movers","涨跌"],["advice","建议"],["alerts","告警"],["sources","数据源"],
+  ["focus","关注"],["overview","概览"],["kline","K 线"],["rent","租赁"],
+  ["spread","套利"],["movers","涨跌"],["advice","建议"],["alerts","告警"],
+  ["sources","数据源"],
 ];
 let current = "overview";
 
@@ -222,6 +236,7 @@ function switchTab(id){
   if(id === "kline" && !chartDrawn) loadKline();
   if(id === "spread" && !spreadDrawn) loadSpread();
   if(id === "focus" && !focusDrawn) loadFocus();
+  if(id === "rent" && !rentDrawn) loadRent();
   if(id === "advice") loadAdvice();
 }
 
@@ -461,6 +476,111 @@ async function loadVariants(){
       </tr>`).join("") + "</table>").join("");
   }catch(e){
     document.getElementById("variants").innerHTML =
+      `<div class="empty neg">加载失败：${esc(e.message)}</div>`;
+  }
+}
+
+// ── 租赁收益 ───────────────────────────────────────────────
+let rentDrawn = false;
+
+const VERDICT_STYLE = {
+  good:'color:#3fb950;border-color:#1c3a24',
+  marginal:'color:#e3b341;border-color:#5c4a1a',
+  poor:'color:#f85149;border-color:#5c1c1c',
+  unknown:'color:#8b949e',
+};
+
+async function loadRent(){
+  const minLiq = parseFloat(document.getElementById("rentMinLiq").value) || 0;
+  try{
+    const d = await get(`/api/rent?limit=60&min_liquidity=${minLiq}`);
+    rentDrawn = true;
+    const s = d.stats || {};
+    document.getElementById("rentNote").innerHTML =
+      `租赁库 ${s.snapshots||0} 条快照 / ${s.items_with_rent||0} 个饰品有租价` +
+      `　｜　费率口径：租赁抽成 ${(d.assumptions.rent_fee.YOUPIN*100).toFixed(0)}%` +
+      ` · 卖出 ${(d.assumptions.sell_fee.YOUPIN*100).toFixed(1)}%` +
+      ` · 提现 ${(d.assumptions.withdraw_fee*100).toFixed(1)}%` +
+      `　｜　出租率缺省假设 ${(d.assumptions.occupancy_fallback*100).toFixed(0)}%`;
+
+    const el = document.getElementById("rent");
+    if(!d.items.length){
+      el.innerHTML = '<div class="empty">还没有租赁数据。<br>' +
+        '采集：<code>python -m csmon rent scan</code>（需 CSQAQ Token）</div>';
+      return;
+    }
+    el.innerHTML = `<table><tr><th>年化</th><th>风险调整</th><th>模式</th>
+      <th>持有天数</th><th>日租金</th><th>出租率</th><th>波动率</th>
+      <th>流动性</th><th>结论</th><th>饰品</th></tr>` +
+      d.items.map(r => `<tr style="cursor:pointer"
+          onclick="loadRentDetail('${esc(r.market_hash_name).replace(/'/g,"\\'")}')">
+        <td class="${r.annualized_pct>=0?'neg':'pos'}"><b>${r.annualized_pct.toFixed(1)}%</b></td>
+        <td>${r.risk_adjusted_pct != null ? r.risk_adjusted_pct.toFixed(2) : "—"}</td>
+        <td>${esc(r.mode_cn)}</td>
+        <td>${r.horizon_days}</td>
+        <td>${fmt(r.daily_rent, 2)}</td>
+        <td>${(r.occupancy*100).toFixed(0)}%</td>
+        <td>${r.volatility_pct != null ? r.volatility_pct.toFixed(1)+"%" : "—"}</td>
+        <td>${r.liquidity_score != null ? r.liquidity_score.toFixed(0) : "—"}</td>
+        <td><span class="tag" style="${VERDICT_STYLE[r.verdict]||''}">${esc(r.verdict_cn)}</span></td>
+        <td>${esc(r.display_name || r.market_hash_name)}</td>
+      </tr>`).join("") + "</table>" +
+      `<div class="empty" style="margin-top:14px;text-align:left">
+         <b>怎么看这张表</b><br>
+         · <b>年化</b> =（净租金 + 价格变动 − 卖出成本）÷ 买入价，按持有天数年化 —— 点任意一行看完整分解<br>
+         · <b>出租率</b> 由「平台年化 ÷ 理论年化」推算；平台未给年化时按保守值假设<br>
+         · <b>风险调整</b> = 年化 ÷ 年化波动率，越高说明收益相对波动越划算<br>
+         · 同一件饰品在不同持有周期下结论可能反转：<b>租金是线性累积的，价格变动不是</b>
+       </div>`;
+  }catch(e){
+    document.getElementById("rent").innerHTML =
+      `<div class="empty neg">加载失败：${esc(e.message)}</div>`;
+  }
+}
+
+async function loadRentDetail(name){
+  try{
+    const d = await get(`/api/rent/${encodeURIComponent(name)}`);
+    const s = d.snapshot || {};
+    const v = d.verdict || {};
+    const rows = d.scenarios || [];
+    document.getElementById("rentDetail").innerHTML = `
+      <h2>${esc(d.display_name || name)} — 收益分解</h2>
+      <div class="row sub">
+        买入价 ${fmt(s.market_price)} ｜ 存世量 ${s.supply ?? "—"}
+        ｜ 在售量 ${s.sell_num ?? "—"} ｜ 出租挂单 ${s.lease_listings ?? "—"}
+        ｜ 转租价 ${fmt(s.transfer_price)}
+      </div>
+      <table><tr><th>模式</th><th>天数</th><th>日租</th><th>出租率</th>
+        <th>毛租金</th><th>净租金</th><th>价格变动</th><th>卖出成本</th>
+        <th>总收益</th><th>年化</th></tr>` +
+        rows.map(r => `<tr>
+          <td>${esc(r.mode_cn)}</td><td>${r.horizon_days}</td>
+          <td>${fmt(r.daily_rent,2)}</td>
+          <td>${(r.occupancy*100).toFixed(0)}%</td>
+          <td>${fmt(r.gross_rent)}</td><td>${fmt(r.net_rent)}</td>
+          <td class="${r.price_move>=0?'neg':'pos'}">${r.price_move>=0?"+":""}${fmt(r.price_move)}</td>
+          <td>${fmt(r.exit_cost)}</td>
+          <td class="${r.total_return>=0?'neg':'pos'}"><b>${r.total_return>=0?"+":""}${fmt(r.total_return)}</b></td>
+          <td class="${r.annualized_pct>=0?'neg':'pos'}"><b>${r.annualized_pct.toFixed(1)}%</b></td>
+        </tr>`).join("") + "</table>" +
+      `<div class="metrics" style="margin-top:14px">
+         ${[["理论年化（满租）", (rows[0]?.theoretical_annual_pct?.toFixed(1) ?? "—")+"%"],
+            ["平台口径年化", s.long_annual_pct != null ? s.long_annual_pct+"%" : "—"],
+            ["推算出租率", rows[0] ? (rows[0].occupancy*100).toFixed(0)+"%" : "—"],
+            ["估计年化波动率", rows[0]?.volatility_pct != null ? rows[0].volatility_pct.toFixed(1)+"%" : "—"],
+            ["流动性评分", rows[0]?.liquidity_score != null ? rows[0].liquidity_score.toFixed(0)+"/100" : "—"]
+           ].map(([k,val]) => `<div class="metric"><div class="k">${k}</div>
+             <div class="v">${val}</div></div>`).join("")}
+       </div>
+      <div style="margin-top:12px"><b>结论：${esc(v.headline||"—")}</b></div>
+      <div class="readings" style="margin-top:8px">
+        ${(v.reasons||[]).map(r => "· " + esc(r)).join("<br>")}
+        ${(v.caveats||[]).length ? "<br><br>" + (v.caveats||[]).map(c =>
+            `<span style="color:#e3b341">! ${esc(c)}</span>`).join("<br>") : ""}
+      </div>`;
+  }catch(e){
+    document.getElementById("rentDetail").innerHTML =
       `<div class="empty neg">加载失败：${esc(e.message)}</div>`;
   }
 }

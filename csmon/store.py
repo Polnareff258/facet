@@ -258,6 +258,39 @@ CREATE TABLE IF NOT EXISTS variant_terms (
 );
 CREATE INDEX IF NOT EXISTS idx_variant_terms_kind
     ON variant_terms(kind, market_hash_name);
+
+-- 租赁行情快照：日租金/年化/出租挂单数等，与买卖报价分开存。
+-- 为什么单独一张表：租赁的字段（日租金、出租挂单数、转租价）与交易报价
+-- 语义完全不同，塞进 quotes 会让那张表变成大杂烩，且列大部分为空。
+CREATE TABLE IF NOT EXISTS rent_snapshots (
+    id                  INTEGER PRIMARY KEY AUTOINCREMENT,
+    market_hash_name    TEXT NOT NULL,
+    csqaq_good_id       INTEGER,
+    market_price        REAL,
+    -- 分平台价格也要存：market_price 是聚合后的「最低价」，
+    -- 只有它的话，读回后无法还原「哪个平台最便宜」，
+    -- 展示时会把悠悠的价格标成 BUFF 的，手续费口径也会算错。
+    buff_sell_price     REAL,
+    yyyp_sell_price     REAL,
+    steam_sell_price    REAL,
+    short_daily_rent    REAL,
+    long_daily_rent     REAL,
+    short_annual_pct    REAL,
+    long_annual_pct     REAL,
+    lease_listings      INTEGER,
+    transfer_price      REAL,
+    turnover_number     INTEGER,
+    turnover_avg_price  REAL,
+    supply              INTEGER,
+    sell_num            INTEGER,
+    buy_num             INTEGER,
+    price_change        TEXT,           -- JSON: {"7": -2.17, "30": -8.13}
+    phases              TEXT,           -- JSON: dpl 数组
+    source              TEXT NOT NULL,
+    observed_at         TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_rent_lookup
+    ON rent_snapshots(market_hash_name, observed_at DESC);
 """
 
 # 全文索引与同步触发器。
@@ -316,6 +349,11 @@ class Store:
         migrations: dict[str, dict[str, str]] = {
             "cn_names": {"base_en": "TEXT"},
             "quotes": {"variant_label": "TEXT"},
+            "rent_snapshots": {
+                "buff_sell_price": "REAL",
+                "yyyp_sell_price": "REAL",
+                "steam_sell_price": "REAL",
+            },
         }
         for table, columns in migrations.items():
             try:
@@ -1326,13 +1364,92 @@ class Store:
             "SELECT COUNT(DISTINCT market_hash_name) FROM variant_terms").fetchone()[0]
         return {"items_with_vocab": int(items), "by_kind": by_kind}
 
+    # ── 租赁行情 ───────────────────────────────────────────
+
+    def insert_rent_snapshot(self, snapshot: Any) -> int:
+        """写入一条租赁快照（接收 csmon.rental.RentSnapshot）。"""
+        import json as _json
+
+        with self._write_lock:
+            cur = self._conn.execute(
+                """
+                INSERT INTO rent_snapshots
+                    (market_hash_name, csqaq_good_id, market_price,
+                     buff_sell_price, yyyp_sell_price, steam_sell_price,
+                     short_daily_rent, long_daily_rent, short_annual_pct,
+                     long_annual_pct, lease_listings, transfer_price,
+                     turnover_number, turnover_avg_price, supply, sell_num,
+                     buy_num, price_change, phases, source, observed_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (snapshot.market_hash_name,
+                 getattr(snapshot, "csqaq_good_id", None),
+                 snapshot.market_price,
+                 snapshot.buff_sell_price, snapshot.yyyp_sell_price,
+                 snapshot.steam_sell_price,
+                 snapshot.short_daily_rent, snapshot.long_daily_rent,
+                 snapshot.short_annual_pct, snapshot.long_annual_pct,
+                 snapshot.lease_listings, snapshot.transfer_price,
+                 snapshot.turnover_number, snapshot.turnover_avg_price,
+                 snapshot.supply, snapshot.sell_num, snapshot.buy_num,
+                 _json.dumps(snapshot.price_change_pct, ensure_ascii=False),
+                 _json.dumps([p.to_dict() for p in snapshot.phases],
+                             ensure_ascii=False),
+                 snapshot.source, iso(snapshot.observed_at)),
+            )
+            self._conn.commit()
+            return int(cur.lastrowid or 0)
+
+    def latest_rent_snapshot(self, market_hash_name: str) -> dict[str, Any] | None:
+        row = self._conn.execute(
+            """SELECT * FROM rent_snapshots WHERE market_hash_name = ?
+               ORDER BY observed_at DESC, id DESC LIMIT 1""",
+            (market_hash_name,)).fetchone()
+        return dict(row) if row else None
+
+    def rent_history(self, market_hash_name: str, days: int = 180,
+                     limit: int = 2000) -> list[dict[str, Any]]:
+        since = iso(utcnow() - timedelta(days=days))
+        rows = self._conn.execute(
+            """SELECT * FROM rent_snapshots
+               WHERE market_hash_name = ? AND observed_at >= ?
+               ORDER BY observed_at ASC LIMIT ?""",
+            (market_hash_name, since, limit)).fetchall()
+        return [dict(r) for r in rows]
+
+    def latest_rent_all(self, limit: int = 2000) -> list[dict[str, Any]]:
+        """每个饰品的最新一条租赁快照（看板与排行榜用）。"""
+        rows = self._conn.execute(
+            """SELECT * FROM (
+                   SELECT *, ROW_NUMBER() OVER (
+                       PARTITION BY market_hash_name ORDER BY observed_at DESC, id DESC
+                   ) AS rn FROM rent_snapshots
+               ) WHERE rn = 1
+               ORDER BY market_hash_name LIMIT ?""",
+            (limit,)).fetchall()
+        return [dict(r) for r in rows]
+
+    def rent_stats(self) -> dict[str, Any]:
+        row = self._conn.execute(
+            "SELECT COUNT(*), COUNT(DISTINCT market_hash_name) FROM rent_snapshots"
+        ).fetchone()
+        with_rent = self._conn.execute(
+            """SELECT COUNT(DISTINCT market_hash_name) FROM rent_snapshots
+               WHERE short_daily_rent IS NOT NULL OR long_daily_rent IS NOT NULL"""
+        ).fetchone()[0]
+        return {"snapshots": int(row[0]), "items": int(row[1]),
+                "items_with_rent": int(with_rent)}
+
     # ── 统计 ───────────────────────────────────────────────
 
     def stats(self) -> dict[str, Any]:
+        rent = self.rent_stats()
         return {
             "items": self.count_items(),
             "quotes": self.quote_count(),
             "alerts": self.alert_count(),
             "watching": self.watch_count(),
+            "rent_snapshots": rent["snapshots"],
+            "rent_items": rent["items_with_rent"],
             "database": str(self.path),
         }
