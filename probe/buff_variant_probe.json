@@ -1,0 +1,148 @@
+{
+  "sell_order_params": [
+    {
+      "case": "base",
+      "code": "OK",
+      "error": null,
+      "item_keys": [
+        "allow_bargain",
+        "allow_bargain_chat",
+        "allow_bargain_swap",
+        "allow_pending_divide_balance",
+        "appid",
+        "asset_info",
+        "bookmarked",
+        "can_bargain"
+      ]
+    },
+    {
+      "case": "+paintseed",
+      "code": "Login Required",
+      "error": "请先登录",
+      "item_keys": []
+    },
+    {
+      "case": "+paintwear",
+      "code": "OK",
+      "error": null,
+      "item_keys": [
+        "allow_bargain",
+        "allow_bargain_chat",
+        "allow_bargain_swap",
+        "allow_pending_divide_balance",
+        "appid",
+        "asset_info",
+        "bookmarked",
+        "can_bargain"
+      ]
+    },
+    {
+      "case": "+min_paintwear",
+      "code": "Login Required",
+      "error": "请先登录",
+      "item_keys": []
+    },
+    {
+      "case": "+sort_by",
+      "code": "Login Required",
+      "error": "请先登录",
+      "item_keys": []
+    },
+    {
+      "case": "+search",
+      "code": "OK",
+      "error": null,
+      "item_keys": [
+        "allow_bargain",
+        "allow_bargain_chat",
+        "allow_bargain_swap",
+        "allow_pending_divide_balance",
+        "appid",
+        "asset_info",
+        "bookmarked",
+        "can_bargain"
+      ]
+    },
+    {
+      "case": "+use_suggestion",
+      "code": "OK",
+      "error": null,
+      "item_keys": [
+        "allow_bargain",
+        "allow_bargain_chat",
+        "allow_bargain_swap",
+        "allow_pending_divide_balance",
+        "appid",
+        "asset_info",
+        "bookmarked",
+        "can_bargain"
+      ]
+    }
+  ],
+  "endpoints": [
+    {
+      "endpoint": "goods/paintseed_list",
+      "code": "Path Not Found",
+      "sample": "{\"code\": \"Path Not Found\", \"error\": \"请求的对象不存在\", \"extra\": null}"
+    },
+    {
+      "endpoint": "goods/pattern",
+      "code": "Path Not Found",
+      "sample": "{\"code\": \"Path Not Found\", \"error\": \"请求的对象不存在\", \"extra\": null}"
+    },
+    {
+      "endpoint": "goods/paintseed",
+      "code": "Path Not Found",
+      "sample": "{\"code\": \"Path Not Found\", \"error\": \"请求的对象不存在\", \"extra\": null}"
+    },
+    {
+      "endpoint": "goods/sell_order_options",
+      "code": "Path Not Found",
+      "sample": "{\"code\": \"Path Not Found\", \"error\": \"请求的对象不存在\", \"extra\": null}"
+    },
+    {
+      "endpoint": "goods/detail",
+      "code": "Path Not Found",
+      "sample": "{\"code\": \"Path Not Found\", \"error\": \"请求的对象不存在\", \"extra\": null}"
+    },
+    {
+      "endpoint": "goods/tags",
+      "code": "OK",
+      "sample": "{\"code\": \"OK\", \"data\": {\"tags\": []}, \"msg\": null}"
+    },
+    {
+      "endpoint": "market/banner",
+      "code": "Path Not Found",
+      "sample": "{\"code\": \"Path Not Found\", \"error\": \"请求的对象不存在\", \"extra\": null}"
+    },
+    {
+      "endpoint": "goods/special_style",
+      "code": "Path Not Found",
+      "sample": "{\"code\": \"Path Not Found\", \"error\": \"请求的对象不存在\", \"extra\": null}"
+    }
+  ],
+  "page_html": {
+    "http": 200,
+    "length": 319016,
+    "keyword_hits": {
+      "paintseed": 11,
+      "paint_seed": 0,
+      "图案": 4,
+      "相位": 0,
+      "多普勒": 2,
+      "红宝石": 0,
+      "蓝宝石": 0,
+      "special_style": 0,
+      "specialStyle": 0
+    }
+  },
+  "paintseed": {
+    "samples": 6,
+    "distinct": 3,
+    "values": {
+      "755": 2,
+      "56": 2,
+      "451": 2
+    }
+  }
+}

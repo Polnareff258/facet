@@ -1,0 +1,77 @@
+# youyoumonitor 本地私有配置模板
+#
+# 复制为 config.local.yaml 后按需修改：
+#     Windows:  copy config.local.example.yaml config.local.yaml
+#     Linux:    cp config.local.example.yaml config.local.yaml
+#
+# 为什么要有这个文件：
+#   config.yaml 是要提交进仓库的模板，改它会让 git pull 冲突。
+#   config.local.yaml 已在 .gitignore 中，放你个人的东西，
+#   拉取更新永远不会覆盖它。
+#
+# 规则：
+#   · 只写要覆盖的项，其余自动继承 config.yaml
+#   · 字典逐键合并（改一个源的一个字段，不必整段抄）
+#   · 列表整体替换（关注清单这类，避免追加出重复项）
+#   · **密钥不要写这里** —— 密钥走 .env（同样不入库）
+#
+# 两个文件的分工：
+#   config.local.yaml  → 非密钥的个人配置（源开关、预设选择、渠道、端口）
+#   .env               → 密钥（API Token / Cookie / Key）
+
+# ── 数据源开关 ─────────────────────────────────────────────
+sources:
+  # BUFF：匿名可用在售价 + 求购价；配 BUFF_COOKIE 后解锁搜索与档位筛选
+  buff:
+    enabled: true
+    min_interval: 5.0
+    fetch_bid: true          # 同时取求购价（多一次请求，换来「能立刻卖出多少钱」）
+
+  # 悠悠有品：免凭据，但只提供求购价
+  youpin_direct:
+    enabled: true
+
+  # 档位模式：按相位/宝石/渐变区间分别产出求购价
+  # 开启前建议先建词表：csmon variants sync "★ M9 Bayonet | Doppler (Factory New)"
+  # tier_mode: true
+  # tier_pages: 2
+
+  # SteamDT：需要 API Key，批量 1 次/分钟
+  # steamdt:
+  #   enabled: true
+
+# ── LLM ───────────────────────────────────────────────────
+# 推荐直接跑向导，它会写这里 + .env 并当场验证：
+#     python -m csmon setup llm
+llm:
+  preset: ""                 # deepseek / openai / moonshot / dashscope /
+                             # zhipu / siliconflow / ollama / lmstudio / vllm
+  # model: deepseek-chat     # 留空用预设默认
+  temperature: 0.2
+
+# ── 关注清单（我真正要买/要卖的）────────────────────────────
+# 更推荐用 CLI 添加，会自动展开变体：
+#     csmon focus add "AK-47 | Redline" --intent buy --target 95 --wears FT,MW
+# watchlist:
+#   - market_hash_name: "AK-47 | Redline (Field-Tested)"
+#     below: 95
+#     drop_percent: 8
+#     cooldown_minutes: 240
+
+# ── 通知 ──────────────────────────────────────────────────
+# 先用 dry_run 把规则验证好，再打开真推送
+notify:
+  enabled: false
+  dry_run: true
+  quiet_hours: [23, 8]
+  # channels:
+  #   - type: wecom
+  #     url: "https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=XXX"
+
+# ── 运行参数 ───────────────────────────────────────────────
+# poll_interval: 1800        # 采集间隔秒（树莓派建议 3600）
+# database: data/csmon.db    # 数据库路径（树莓派建议放 USB/SSD）
+
+web:
+  port: 8787
+  # host: 0.0.0.0            # 默认只绑回环；外网访问请加反代与鉴权

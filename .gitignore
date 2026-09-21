@@ -1,0 +1,50 @@
+# 运行产物与本地状态：一律不入库
+data/
+*.db
+*.db-wal
+*.db-shm
+*.log
+run/
+logs/
+
+# 凭证与本地私有配置：一律不入库
+.env
+config.local.yaml
+.runtime_state.json
+youpin_device_profile.json
+
+# 图案档位规则表：learned 段是你从实盘学到的数据，属个人资产。
+# 脚手架由 `python -m csmon patterns init` 生成，无需入库。
+patterns.yaml
+patterns.local.yaml
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.testwork/
+.uv-cache/
+.mypy_cache/
+.ruff_cache/
+
+# 沙箱环境下 pytest 创建后无法删除的临时目录（ACL 锁定，内容为空）
+.pytest-tmp/
+pytest-cache-files-*/
+
+# 参考项目源码：按需自行 clone，不入库（含 GPL-3.0 项目，避免许可传染到本仓库）
+refs/
+
+# 探测产物（含本机指纹与时间戳，不入库）
+probe/result.json
+probe/youpin_matrix.json
+probe/buff_header_matrix.json
+probe/buff_id_space.json
+docs_steamdt_llms.txt
+
+# 编辑器
+.vscode/
+.idea/
+*.swp
+.DS_Store

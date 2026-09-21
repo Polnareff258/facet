@@ -1,0 +1,144 @@
+# youyoumonitor 配置
+# 密钥不放这里：凭证一律走 .env（见 .env.example）
+
+database: data/csmon.db
+poll_interval: 1800            # 普通监控轮询间隔（秒）
+baseline_window_hours: 168     # 波动基准窗口（7 天）
+log_level: INFO
+
+# ── 数据源 ──────────────────────────────────────────────────
+# enabled / priority / min_interval / batch_size 可按需调整。
+# priority 数字越小越优先；同平台多源时，告警按「最低价优先」合并，
+# 并对价差过大的情况判定为数据冲突、抑制告警（见 csmon/alerts.py）。
+sources:
+
+  # 主力源：一次调用同时返回 BUFF + 悠悠有品 + Steam 的在售价与在售量。
+  # 需要 CSQAQ_TOKEN，且必须在官网绑定本机白名单 IP。
+  csqaq:
+    enabled: true
+    priority: 10
+    min_interval: 1.05         # 文档：单 IP 1 次/秒
+    batch_size: 50             # 文档：单次 ≤50 个 marketHashName
+
+  # BUFF 数据源（机会型，默认关闭）。
+  #
+  # 两种模式，能力差异很大（均已实测确认）：
+  #
+  #   匿名（不配 Cookie）
+  #     ✅ 在售挂单 sell_order    → 最低在售价 + 在售量
+  #     ✅ 求购挂单 buy_order      → 最高求购价 + 求购量（可判断能否立刻卖出）
+  #     ✅ goods/info              → ID 反查名称
+  #     ❌ 按名称搜索、档位筛选、成交记录（需登录）
+  #
+  #   带 Cookie（.env 里设 BUFF_COOKIE，或用 `python -m csmon setup buff`）
+  #     ✅ 上面全部
+  #     ✅ 按名称搜索 —— 直接解析 goods_id，不必再扫 ID 空间
+  #     ✅ paintseed / 磨损区间筛选 —— 档位级在售价
+  #     ✅ 成交记录
+  #
+  # ⚠ 匿名额度的硬边界：BUFF 的匿名读会被**用量触发的 IP 级风控**整体关闭。
+  #   实测扫描 ID 空间后所有匿名请求转 Login Required，与请求头无关，等待
+  #   150 秒不恢复。配了 Cookie 就基本不会遇到（搜索替代了扫描）。
+  #   本适配器内置 6 小时 IP 级熔断。
+  buff:
+    enabled: false             # 需要 BUFF 数据时打开
+    priority: 20
+    min_interval: 5.0          # 匿名模式建议 ≥5 秒；配 Cookie 后可降到 1.5
+    batch_size: 1
+    fetch_bid: true            # 同时取求购价（每个饰品多一次请求）
+
+  # 悠悠有品免登录直连：只覆盖求购价（在售/租赁接口对匿名请求有风控）。
+  # 需要 youpin_template_id（用 `python -m csmon seed` 导入映射）。
+  #
+  # ★ 档位模式（tier_mode）：开启后按**档位**分别产出求购价。
+  #   悠悠求购接口直接返回平台分类好的中文档位名：
+  #     specialStyle = 红宝石 / 蓝宝石 / 黑珍珠 / P1-P4 / 绿宝石 / T1-T2
+  #     fadeText     = 渐变百分比区间（99-100 / 97-99）
+  #   同一把刀的红宝石与 P2 价差可达数倍，不分开就会把两件不同商品当一件定价。
+  #   代价：每个饰品多拉几页请求。只对多普勒/渐变/淬火这类品类值得开。
+  #   先把要监控的饰品加进档位词表：
+  #     python -m csmon variants sync "★ M9 Bayonet | Doppler (Factory New)"
+  youpin_direct:
+    enabled: true
+    priority: 30
+    min_interval: 1.0
+    batch_size: 1
+    tier_mode: false           # 改 true 开启档位级求购价
+    tier_pages: 2              # 档位模式下每项抓取的页数（越多越全，也越慢）
+
+  # SteamDT 补充源：一次可查 100 个，且提供求购价；但批量限额 1 次/分钟，
+  # 适合做低频兜底。需要 STEAMDT_API_KEY。
+  steamdt:
+    enabled: false
+    priority: 40
+    min_interval: 60.5
+    batch_size: 100
+
+  # 离线演示源：不联网，用于验证整条链路。
+  mock:
+    enabled: false
+    priority: 999
+    min_interval: 0.0
+    batch_size: 1000
+
+# ── 监控清单 ────────────────────────────────────────────────
+# 名称必须是 Steam 官方 market_hash_name（含磨损后缀）。
+# 首次 run 时会导入数据库；之后以数据库为准，CLI/看板改动优先。
+watchlist:
+  - market_hash_name: "AK-47 | Redline (Field-Tested)"
+    below: 100          # 在售价跌破 100 时告警
+    drop_percent: 8     # 较 7 天中位价下跌 8% 时告警
+    cooldown_minutes: 240
+  - market_hash_name: "AWP | Asiimov (Field-Tested)"
+    drop_percent: 10
+    rise_percent: 15
+  - market_hash_name: "★ M9 Bayonet | Bright Water (Well-Worn)"
+    buff_goods_id: 43076        # 已知 ID 直接写死，省一次索引扫描
+    below: 2000
+
+# ── 通知 ────────────────────────────────────────────────────
+notify:
+  enabled: false               # 先保持 false，用 dry_run 验证规则
+  dry_run: true
+  min_severity: warning        # info | warning | critical
+  quiet_hours: [23, 8]         # 23:00 - 08:00 不推送
+  channels: []
+  # channels 示例：
+  # - type: webhook
+  #   url: "http://127.0.0.1:9000/hook"
+  # - type: wecom
+  #   url: "https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=XXX"
+  # - type: telegram
+  #   bot_token: "123:ABC"
+  #   chat_id: "456"
+  #   proxy: "http://127.0.0.1:7890"
+  # - type: serverchan
+  #   send_key: "SCTxxxxx"
+
+# ── LLM（交易建议的第二视角）────────────────────────────────
+#
+# 推荐用向导配置，只需选预设 + 粘密钥：
+#     python -m csmon setup llm
+#
+# 它会把预设写进 config.local.yaml（不入库），把密钥写进 .env（不入库），
+# 并当场验证连通性。这里留空即可，只有想固定默认值时才填。
+llm:
+  preset: ""                   # deepseek / openai / moonshot / dashscope /
+                               # zhipu / siliconflow / ollama / lmstudio / vllm
+  model: ""                    # 留空用预设默认
+  base_url: ""                 # 留空用预设默认
+  temperature: 0.2
+  max_tokens: 2000
+
+# ── 看板 ────────────────────────────────────────────────────
+# 默认只绑回环。监控清单本身是敏感信息（暴露你的持仓意向），
+# 若要外网访问请自行加反向代理与鉴权。
+web:
+  host: 127.0.0.1
+  port: 8787
+
+# ── 本地私有配置 ────────────────────────────────────────────
+# 上面这些都能被同目录的 config.local.yaml 覆盖，只需写要改的项。
+# 该文件已在 .gitignore 中，用于放个人内容（关注清单、源开关、通知渠道），
+# 这样 git pull 永远不会与你的本地改动冲突。
+# 模板见 config.local.example.yaml

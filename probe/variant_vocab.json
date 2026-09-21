@@ -1,0 +1,129 @@
+[
+  {
+    "template_id": 1681,
+    "label": "★ 刺刀 | 多普勒 (崭新出厂)",
+    "rows": 41,
+    "cn_name": "刺刀（★） | 多普勒 (崭新出厂)",
+    "style_vocab": [
+      "P1",
+      "P2",
+      "P4",
+      "红宝石",
+      "蓝宝石",
+      "黑珍珠"
+    ],
+    "style_counts": {
+      "黑珍珠": 7,
+      "红宝石": 10,
+      "蓝宝石": 6,
+      "P2": 6,
+      "P4": 4,
+      "不限": 7,
+      "P1": 1
+    },
+    "fade_vocab": [],
+    "fade_counts": {
+      "None": 41
+    },
+    "abrade_vocab": [
+      "0-0.01",
+      "0.01-0.07",
+      "0-0.03",
+      "0-0.04",
+      "0-0.02",
+      "不限",
+      "0-0.06"
+    ]
+  },
+  {
+    "template_id": 45985,
+    "label": "★ 蝴蝶刀 | 多普勒 (崭新出厂)",
+    "rows": 0
+  },
+  {
+    "template_id": 45724,
+    "label": "AWP | 渐变之色 (崭新出厂)",
+    "rows": 28,
+    "cn_name": "AWP | 渐变之色 (崭新出厂)",
+    "style_vocab": [],
+    "style_counts": {
+      "None": 28
+    },
+    "fade_vocab": [
+      "97-99",
+      "99-100"
+    ],
+    "fade_counts": {
+      "99-100": 4,
+      "97-99": 2,
+      "0-100": 22
+    },
+    "abrade_vocab": [
+      "0-0.01",
+      "0-0.04",
+      "0-0.06",
+      "不限",
+      "0-0.07"
+    ]
+  },
+  {
+    "template_id": 44937,
+    "label": "★ 刺刀 | 渐变大理石 (崭新出厂)",
+    "rows": 7,
+    "cn_name": "刺刀（★） | 渐变大理石 (崭新出厂)",
+    "style_vocab": [],
+    "style_counts": {
+      "None": 7
+    },
+    "fade_vocab": [],
+    "fade_counts": {
+      "None": 7
+    },
+    "abrade_vocab": [
+      "不限"
+    ]
+  },
+  {
+    "template_id": 494,
+    "label": "AK-47 | 表面淬火 (久经沙场)",
+    "rows": 18,
+    "cn_name": "AK-47 | 表面淬火 (久经沙场)",
+    "style_vocab": [
+      "T1",
+      "T2"
+    ],
+    "style_counts": {
+      "T1": 2,
+      "T2": 5,
+      "不限": 11
+    },
+    "fade_vocab": [],
+    "fade_counts": {
+      "None": 18
+    },
+    "abrade_vocab": [
+      "不限",
+      "0.15-0.18",
+      "0.15-0.24"
+    ]
+  },
+  {
+    "template_id": 62097,
+    "label": "★ 鲍伊猎刀 | 伽马多普勒 (崭新出厂)",
+    "rows": 1,
+    "cn_name": "鲍伊猎刀（★） | 伽玛多普勒 (崭新出厂)",
+    "style_vocab": [
+      "绿宝石"
+    ],
+    "style_counts": {
+      "绿宝石": 1
+    },
+    "fade_vocab": [],
+    "fade_counts": {
+      "None": 1
+    },
+    "abrade_vocab": [
+      "0-0.02"
+    ]
+  }
+]

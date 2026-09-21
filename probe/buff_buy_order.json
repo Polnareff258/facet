@@ -1,0 +1,111 @@
+{
+  "43076": {
+    "code": "OK",
+    "keys": [
+      "items",
+      "page_num",
+      "page_size",
+      "show_pay_method_icon",
+      "total_count",
+      "total_page",
+      "user_infos"
+    ],
+    "items": [
+      {
+        "appid": 730,
+        "game": "csgo",
+        "id": "260921T1532506241",
+        "user_id": "U1084398342",
+        "num": 1,
+        "real_num": 0,
+        "frozen_num": 0,
+        "state": "progressing",
+        "goods_id": 43076,
+        "price": "1970",
+        "fee": "0",
+        "frozen_amount": "1970",
+        "created_at": 1789986003,
+        "updated_at": 1789986003,
+        "allow_tradable_cooldown": 0,
+        "tradable_cooldown": null,
+        "specific": [],
+        "icon_url": "https://market.fp.ps.netease.com/file/65f80ce574c75a92c62f734atMisBvgr05?fop=imageView/6/f/webp/q/75",
+        "pay_expire_timeout": -1,
+        "pay_expire_time": null,
+        "expire_time": null,
+        "pay_method_text": "先求后付",
+        "pay_method": 94,
+        "state_text": "正在求购",
+        "supported_pay_channels": [
+          "nepay",
+          "alipay"
+        ]
+      },
+      {
+        "appid": 730,
+        "game": "csgo",
+        "id": "260911T1533996699",
+        "user_id": "U1081059420",
+        "num": 1,
+        "real_num": 0,
+        "frozen_num": 0,
+        "state": "progressing",
+        "goods_id": 43076,
+        "price": "1960",
+        "fee": "0",
+        "frozen_amount": "1960",
+        "created_at": 1789088627,
+        "updated_at": 1789088627,
+        "allow_tradable_cooldown": 0,
+        "tradable_cooldown": null,
+        "specific": [],
+        "icon_url": "https://market.fp.ps.netease.com/file/65f80ce574c75a92c62f734atMisBvgr05?fop=imageView/6/f/webp/q/75",
+        "pay_expire_timeout": -1,
+        "pay_expire_time": null,
+        "expire_time": null,
+        "pay_method_text": "先求后付",
+        "pay_method": 94,
+        "state_text": "正在求购",
+        "supported_pay_channels": [
+          "nepay",
+          "alipay"
+        ]
+      },
+      {
+        "appid": 730,
+        "game": "csgo",
+        "id": "260921T1532517716",
+        "user_id": "U1094552915",
+        "num": 1,
+        "real_num": 0,
+        "frozen_num": 0,
+        "state": "progressing",
+        "goods_id": 43076,
+        "price": "1900",
+        "fee": "0",
+        "frozen_amount": "1900",
+        "created_at": 1789979750,
+        "updated_at": 1789979750,
+        "allow_tradable_cooldown": 0,
+        "tradable_cooldown": null,
+        "specific": [],
+        "icon_url": "https://market.fp.ps.netease.com/file/65f80ce574c75a92c62f734atMisBvgr05?fop=imageView/6/f/webp/q/75",
+        "pay_expire_timeout": -1,
+        "pay_expire_time": null,
+        "expire_time": null,
+        "pay_method_text": "先求后付",
+        "pay_method": 94,
+        "state_text": "正在求购",
+        "supported_pay_channels": [
+          "nepay",
+          "alipay"
+        ]
+      }
+    ]
+  },
+  "46682": {
+    "code": "Invalid Argument",
+    "keys": [],
+    "items": []
+  }
+}

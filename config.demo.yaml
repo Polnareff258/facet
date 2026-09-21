@@ -1,0 +1,39 @@
+# 离线演示配置：只启用 mock 源，用于验证「采集 → 存储 → 告警 → 看板」整条链路。
+# 用法： python -m csmon -c config.demo.yaml run
+database: data/demo.db
+poll_interval: 5
+baseline_window_hours: 24
+log_level: INFO
+
+sources:
+  mock:
+    enabled: true
+    priority: 1
+    min_interval: 0.0
+  csqaq:
+    enabled: false
+  buff:
+    enabled: false
+  youpin_direct:
+    enabled: false
+  steamdt:
+    enabled: false
+
+watchlist:
+  - market_hash_name: "AK-47 | Redline (Field-Tested)"
+    below: 102            # mock 基准价 100，波动 ±3%，会周期性跌破
+    drop_percent: 1
+    rise_percent: 1
+    cooldown_minutes: 0   # 演示用：关掉冷却，让每轮都能看到告警
+  - market_hash_name: "AWP | Asiimov (Field-Tested)"
+    below: 99
+
+notify:
+  enabled: true
+  dry_run: true           # 只打印不发送，验证规则阶段的安全默认
+  min_severity: info
+  channels: []
+
+web:
+  host: 127.0.0.1
+  port: 8788

@@ -1,0 +1,49 @@
+{
+  "anonymous": {
+    "sell_order 基础": {
+      "code": "OK",
+      "error": null,
+      "extra": " items=3 total=3"
+    },
+    "sell_order +paintseed": {
+      "code": "Login Required",
+      "error": "请先登录",
+      "extra": ""
+    },
+    "sell_order +sort_by": {
+      "code": "Login Required",
+      "error": "请先登录",
+      "extra": ""
+    },
+    "goods 列表": {
+      "code": "Login Required",
+      "error": "请先登录",
+      "extra": ""
+    },
+    "goods 搜索": {
+      "code": "Login Required",
+      "error": "请先登录",
+      "extra": ""
+    },
+    "goods info": {
+      "code": "OK",
+      "error": null,
+      "extra": ""
+    },
+    "bill_order 成交": {
+      "code": "Login Required",
+      "error": "请先登录",
+      "extra": ""
+    },
+    "buy_order 求购": {
+      "code": "OK",
+      "error": null,
+      "extra": " items=3 total=3"
+    },
+    "用户信息": {
+      "code": "Path Not Found",
+      "error": "请求的对象不存在",
+      "extra": ""
+    }
+  }
+}

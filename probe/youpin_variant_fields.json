@@ -1,0 +1,102 @@
+[
+  {
+    "market_hash_name": "AK-47 | Case Hardened (Factory New)",
+    "template_id": 798,
+    "probe": {
+      "error": "JSONDecodeError: Expecting value: line 1 column 1 (char 0)"
+    }
+  },
+  {
+    "market_hash_name": "AK-47 | Case Hardened (Field-Tested)",
+    "template_id": 494,
+    "probe": {
+      "code": 0,
+      "rows": 18,
+      "sample": {
+        "purchaseNo": "2026090762666979286",
+        "isNew": 1,
+        "headPicUrl": "https://youpin.img898.com/images/20240604/f00153ff5cd44ee29b310f3a62bf12c5.jpeg",
+        "userName": "报价秒接钱秒到",
+        "userId": 644016,
+        "iconUrl": "https://youpin.img898.com/csgo/template/ba054b5dcd6e41748791309b28458fbe.png",
+        "purchasePrice": 6880.0,
+        "purchasePriceDesc": "6880",
+        "commodityName": "AK-47 | 表面淬火 (久经沙场)",
+        "surplusQuantity": 1,
+        "abradeText": "不限",
+        "fadeText": null,
+        "specialStyle": "T1",
+        "autoReceived": 1,
+        "rankFirstPrice": null,
+        "rankFirstPriceText": null,
+        "isRankFirst": null,
+        "templateId": 494,
+        "type": 3,
+        "typeId": 104,
+        "purchaseLabelList": null
+      }
+    }
+  },
+  {
+    "market_hash_name": "AK-47 | Case Hardened (Minimal Wear)",
+    "template_id": 43804,
+    "probe": {
+      "code": 0,
+      "rows": 5,
+      "sample": {
+        "purchaseNo": "2026091762678019508",
+        "isNew": 1,
+        "headPicUrl": "https://youpin.img898.com/images/20230406/46cb1ea70a394f31a10515de6f350d49.jpeg",
+        "userName": "解忧杂货铺",
+        "userId": 314307,
+        "iconUrl": "https://youpin.img898.com/csgo/template/99b2e2f30f6d4e458b0edd2c96268084.png",
+        "purchasePrice": 8880.0,
+        "purchasePriceDesc": "8880",
+        "commodityName": "AK-47 | 表面淬火 (略有磨损)",
+        "surplusQuantity": 1,
+        "abradeText": "0.07-0.08",
+        "fadeText": null,
+        "specialStyle": "T1",
+        "autoReceived": 1,
+        "rankFirstPrice": null,
+        "rankFirstPriceText": null,
+        "isRankFirst": null,
+        "templateId": 43804,
+        "type": 3,
+        "typeId": 108,
+        "purchaseLabelList": null
+      }
+    }
+  },
+  {
+    "market_hash_name": "AK-47 | Crossfade (Factory New)",
+    "template_id": 109815,
+    "probe": {
+      "code": 0,
+      "rows": 5,
+      "sample": {
+        "purchaseNo": "2026092062680298118",
+        "isNew": 1,
+        "headPicUrl": "https://pic.youpinimg.com/avatar/user_normall.png",
+        "userName": "3595的店铺",
+        "userId": 1003595,
+        "iconUrl": "https://youpin.img898.com/csgo/template/67bd161febfb4999ac954ddffd6cbd08.png",
+        "purchasePrice": 26.4,
+        "purchasePriceDesc": "26.4",
+        "commodityName": "AK-47 | 交叉渐变 (崭新出厂)",
+        "surplusQuantity": 1,
+        "abradeText": null,
+        "fadeText": null,
+        "specialStyle": null,
+        "autoReceived": 1,
+        "rankFirstPrice": null,
+        "rankFirstPriceText": null,
+        "isRankFirst": null,
+        "templateId": 109815,
+        "type": 0,
+        "typeId": -1,
+        "purchaseLabelList": null
+      }
+    }
+  }
+]

@@ -1,0 +1,186 @@
+{
+  "youpin": [
+    {
+      "template_id": 494,
+      "label": "AK-47 | Case Hardened (Field-Tested)",
+      "note": "淬火档位 T1/T2/T3/T4",
+      "rows": 18,
+      "specialStyle": {
+        "T1": 2,
+        "T2": 5,
+        "不限": 11
+      },
+      "fadeText": {
+        "None": 18
+      },
+      "abradeText": {
+        "不限": 16,
+        "0.15-0.18": 1,
+        "0.15-0.24": 1
+      },
+      "commodityName": {
+        "AK-47 | 表面淬火 (久经沙场)": 18
+      }
+    },
+    {
+      "template_id": 43804,
+      "label": "AK-47 | Case Hardened (Minimal Wear)",
+      "note": "淬火档位（略磨）",
+      "rows": 5,
+      "specialStyle": {
+        "T1": 2,
+        "T2": 3
+      },
+      "fadeText": {
+        "None": 5
+      },
+      "abradeText": {
+        "0.07-0.08": 1,
+        "不限": 1,
+        "0.07-0.12": 1,
+        "0.07-0.1": 1,
+        "0.07-0.13": 1
+      },
+      "commodityName": {
+        "AK-47 | 表面淬火 (略有磨损)": 5
+      }
+    },
+    {
+      "template_id": 1681,
+      "label": "★ Bayonet | Doppler (Factory New)",
+      "note": "多普勒相位",
+      "rows": 41,
+      "specialStyle": {
+        "黑珍珠": 7,
+        "红宝石": 10,
+        "蓝宝石": 6,
+        "P2": 6,
+        "P4": 4,
+        "不限": 7,
+        "P1": 1
+      },
+      "fadeText": {
+        "None": 41
+      },
+      "abradeText": {
+        "0-0.01": 4,
+        "0.01-0.07": 1,
+        "0-0.03": 1,
+        "0-0.04": 4,
+        "0-0.02": 2,
+        "不限": 28,
+        "0-0.06": 1
+      },
+      "commodityName": {
+        "刺刀（★） | 多普勒 (崭新出厂)": 41
+      }
+    },
+    {
+      "template_id": 45985,
+      "error": "JSONDecodeError: Expecting value: line 1 column 1 (char 0)"
+    },
+    {
+      "template_id": 45724,
+      "label": "AWP | Fade (Factory New)",
+      "note": "渐变百分比",
+      "rows": 28,
+      "specialStyle": {
+        "None": 28
+      },
+      "fadeText": {
+        "99-100": 4,
+        "97-99": 2,
+        "0-100": 22
+      },
+      "abradeText": {
+        "0-0.01": 2,
+        "0-0.04": 1,
+        "0-0.06": 1,
+        "不限": 23,
+        "0-0.07": 1
+      },
+      "commodityName": {
+        "AWP | 渐变之色 (崭新出厂)": 28
+      }
+    },
+    {
+      "template_id": 44937,
+      "label": "★ Bayonet | Marble Fade (Factory New)",
+      "note": "大理石档位",
+      "rows": 7,
+      "specialStyle": {
+        "None": 7
+      },
+      "fadeText": {
+        "None": 7
+      },
+      "abradeText": {
+        "不限": 7
+      },
+      "commodityName": {
+        "刺刀（★） | 渐变大理石 (崭新出厂)": 7
+      }
+    }
+  ],
+  "buff": {
+    "sell_order 无 paintseed": {
+      "http": 200,
+      "code": "OK",
+      "keys": [
+        "goods_infos",
+        "has_market_stores",
+        "items",
+        "page_num",
+        "page_size",
+        "sort_by",
+        "total_count",
+        "total_page",
+        "user_infos"
+      ],
+      "total": 3,
+      "err": null
+    },
+    "sell_order + paintseed=755": {
+      "http": 200,
+      "code": "Login Required",
+      "keys": [],
+      "total": null,
+      "err": "请先登录"
+    },
+    "goods/paintseed": {
+      "http": 200,
+      "code": "Path Not Found",
+      "keys": [],
+      "total": null,
+      "err": "请求的对象不存在"
+    },
+    "goods/seed": {
+      "http": 200,
+      "code": "Path Not Found",
+      "keys": [],
+      "total": null,
+      "err": "请求的对象不存在"
+    },
+    "goods/tag": {
+      "http": 200,
+      "code": "Path Not Found",
+      "keys": [],
+      "total": null,
+      "err": "请求的对象不存在"
+    },
+    "goods/filters": {
+      "http": 200,
+      "code": "Path Not Found",
+      "keys": [],
+      "total": null,
+      "err": "请求的对象不存在"
+    },
+    "goods/aggregate": {
+      "http": 200,
+      "code": "Path Not Found",
+      "keys": [],
+      "total": null,
+      "err": "请求的对象不存在"
+    }
+  }
+}

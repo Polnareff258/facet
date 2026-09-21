@@ -1,0 +1,14 @@
+# youyoumonitor 运行依赖（Python 3.11+）
+#
+# 说明：本项目刻意保持依赖精简 —— 调度器与限速器自实现，
+# 不引入 APScheduler / pandas，避免为一个监控工具背上重依赖。
+
+requests>=2.31          # HTTP（多源适配器）
+PyYAML>=6.0             # 配置文件
+fastapi>=0.110          # 看板 API
+uvicorn>=0.27           # ASGI 服务器
+jinja2>=3.1             # FastAPI 模板依赖（看板内联 HTML 也用它做可选渲染）
+pydantic>=2.6           # API 请求模型
+
+# 可选：单元测试
+pytest>=8.0

@@ -1,0 +1,90 @@
+[
+  {
+    "goods_id": 43076,
+    "label": "M9 刺刀（★） | 澄澈之水 (破损不堪)",
+    "result": {
+      "goods_id": 43076,
+      "code": "OK",
+      "count": 3,
+      "items": [
+        {
+          "price": "2180",
+          "paintwear": "0.44405627250671387",
+          "paintseed": 755,
+          "paintindex": 579,
+          "quality": null,
+          "rarity": null,
+          "name_tag": "名称标签: Merge by eyes♡",
+          "has_stickers": 0,
+          "keychains": 0
+        },
+        {
+          "price": "2230",
+          "paintwear": "0.409733384847641",
+          "paintseed": 56,
+          "paintindex": 579,
+          "quality": null,
+          "rarity": null,
+          "name_tag": "名称标签: wagner group",
+          "has_stickers": 0,
+          "keychains": 0
+        },
+        {
+          "price": "2400",
+          "paintwear": "0.4107748568058014",
+          "paintseed": 451,
+          "paintindex": 579,
+          "quality": null,
+          "rarity": null,
+          "name_tag": "",
+          "has_stickers": 0,
+          "keychains": 0
+        }
+      ]
+    }
+  },
+  {
+    "goods_id": 44001,
+    "label": "多普勒系（探针）",
+    "result": {
+      "goods_id": 44001,
+      "code": "OK",
+      "count": 10,
+      "items": [
+        {
+          "price": "15555",
+          "paintwear": "0.07236640900373459",
+          "paintseed": 983,
+          "paintindex": 418,
+          "quality": null,
+          "rarity": null,
+          "name_tag": "",
+          "has_stickers": 0,
+          "keychains": 0
+        },
+        {
+          "price": "18888",
+          "paintwear": "0.07728607207536697",
+          "paintseed": 440,
+          "paintindex": 420,
+          "quality": null,
+          "rarity": null,
+          "name_tag": "名称标签: 你还有几句分开的话.....",
+          "has_stickers": 0,
+          "keychains": 0
+        },
+        {
+          "price": "18999",
+          "paintwear": "0.07702653110027313",
+          "paintseed": 380,
+          "paintindex": 418,
+          "quality": null,
+          "rarity": null,
+          "name_tag": "名称标签: 迎着阳光盛大逃亡",
+          "has_stickers": 0,
+          "keychains": 0
+        }
+      ]
+    }
+  }
+]
